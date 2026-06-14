@@ -3,8 +3,125 @@ import { cacheSessionPath } from "./session-reader";
 import type { AgentSessionLike, ToolInfo } from "./pi-types";
 
 // ============================================================================
-// Types
+// Chinese system prompt localization
 // ============================================================================
+
+function localizeSystemPrompt(prompt: string): string {
+  return prompt
+    // Agent identity
+    .replace(
+      "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.",
+      "你是一个在 pi（编程智能体框架）中运行的专家编程助手。你可以读取文件、执行命令、编辑代码以及创建新文件。"
+    )
+    // Available tools header
+    .replace(
+      "Available tools:",
+      "可用工具："
+    )
+    // Guidelines
+    .replace(
+      "Guidelines:",
+      "使用指南："
+    )
+    // Specific guideline lines
+    .replace(
+      "- Use bash for file operations like ls, rg, find",
+      "- 使用 bash 执行文件操作（如 ls、rg、find）"
+    )
+    .replace(
+      "- Use read to examine files instead of cat or sed.",
+      "- 使用 read 来查看文件，不要用 cat 或 sed"
+    )
+    .replace(
+      "- Use edit for precise changes (edits[].oldText must match exactly)",
+      "- 用 edit 进行精确修改（edits[].oldText 必须完全匹配）"
+    )
+    .replace(
+      "- When changing multiple separate locations in one file, use one edit call with multiple entries in edits[] instead of multiple edit calls",
+      "- 修改同一文件中多个不同位置时，在一个 edit 调用中使用多个 entries[]，而不是多次 edit 调用"
+    )
+    .replace(
+      "- Each edits[].oldText is matched against the original file, not after earlier edits are applied. Do not emit overlapping or nested edits. Merge nearby changes into one edit.",
+      "- 每个 edits[].oldText 都是针对原文件匹配的，而不是基于之前的编辑结果。不要使用重叠或嵌套的编辑。合并相邻的修改为一个 edit"
+    )
+    .replace(
+      "- Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.",
+      "- edits[].oldText 尽量精简，只要在文件中唯一即可。不要用大段未修改的内容来填充"
+    )
+    .replace(
+      "- Use write only for new files or complete rewrites.",
+      "- write 仅用于创建新文件或完全重写"
+    )
+    .replace(
+      "- Use pdf_info as a first step when working with PDFs to understand what you're dealing with.",
+      "- 处理 PDF 时，先用 pdf_info 了解文档基本信息"
+    )
+    .replace(
+      "- Check the has_fillable_fields flag before deciding how to fill a PDF form.",
+      "- 填充 PDF 表单前，先检查 has_fillable_fields 标志"
+    )
+    .replace(
+      "- Use pdf_extract_text for reading PDF content. Specify page ranges to avoid extracting huge documents entirely.",
+      "- 使用 pdf_extract_text 读取 PDF 内容，指定页码范围以避免提取整个大文档"
+    )
+    .replace(
+      "- For table extraction, use pdf_extract_tables instead.",
+      "- 提取表格数据请使用 pdf_extract_tables"
+    )
+    .replace(
+      "- Always use pdf_form_fields before attempting to fill a PDF form.",
+      "- 填充 PDF 表单前务必先调用 pdf_form_fields"
+    )
+    .replace(
+      "- Use the field IDs returned by this tool in pdf_fill_form.",
+      "- 在 pdf_fill_form 中使用 pdf_form_fields 返回的字段 ID"
+    )
+    .replace(
+      "- For checkboxes, use the checked_value/unchecked_value from pdf_form_fields.",
+      "- 对于复选框，使用 pdf_form_fields 返回的 checked_value/unchecked_value"
+    )
+    .replace(
+      "- For radio groups, use one of the radio_options values.",
+      "- 对于单选组，使用 radio_options 中的值"
+    )
+    .replace(
+      "- Be concise in your responses",
+      "- 回复简洁明了"
+    )
+    .replace(
+      "- Show file paths clearly when working with files",
+      "- 处理文件时清晰显示文件路径"
+    )
+    .replace(
+      "In addition to the tools above, you may have access to other custom tools depending on the project.",
+      "除上述工具外，根据项目配置你可能还能使用其他自定义工具。"
+    )
+    // Footer labels
+    .replace(
+      "Current date:",
+      "当前日期："
+    )
+    .replace(
+      "Current working directory:",
+      "当前工作目录："
+    )
+    .replace(
+      "## Git Context",
+      "## Git 上下文"
+    )
+    .replace(
+      "- Branch:",
+      "- 分支："
+    )
+    .replace(
+      "- Commit:",
+      "- 提交："
+    )
+    .replace(
+      "- User:",
+      "- 用户："
+    );
+}
 
 export interface AgentEvent {
   type: string;
@@ -42,6 +159,11 @@ export class AgentSessionWrapper {
   start(): void {
     this.unsubscribe = this.inner.subscribe((event: AgentEvent) => {
       this.resetIdleTimer();
+      // Re-localize system prompt before each agent request —
+      // pi may rebuild it internally before submitting to the model.
+      if (event.type === "beforeAgentStart" && this.inner.agent.state?.systemPrompt) {
+        this.inner.agent.state.systemPrompt = localizeSystemPrompt(this.inner.agent.state.systemPrompt);
+      }
       for (const l of this.listeners) l(event);
     });
     this.resetIdleTimer();
@@ -235,6 +357,10 @@ export class AgentSessionWrapper {
 
       case "set_tools": {
         this.inner.setActiveToolsByName(command.toolNames as string[]);
+        // Re-localize system prompt after tools change triggers a rebuild
+        if (this.inner.agent.state?.systemPrompt) {
+          this.inner.agent.state.systemPrompt = localizeSystemPrompt(this.inner.agent.state.systemPrompt);
+        }
         return null;
       }
 
@@ -345,6 +471,9 @@ export async function startRpcSession(
     // the only way to truly clear it is to call agent.setSystemPrompt directly.
     if (toolNames?.length === 0) {
       inner.agent.state.systemPrompt = "";
+    } else if (inner.agent.state?.systemPrompt) {
+      // Localize system prompt to Chinese where possible
+      inner.agent.state.systemPrompt = localizeSystemPrompt(inner.agent.state.systemPrompt);
     }
 
     const wrapper = new AgentSessionWrapper(inner);

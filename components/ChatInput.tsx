@@ -1227,7 +1227,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             {onSoundToggle !== undefined && (
               <button
                 onClick={onSoundToggle}
-                title={soundEnabled ? "关闭完成提示音" : "开启完成提示音"}
+                title={soundEnabled ? "关闭中文语音播报" : "开启中文语音播报"}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 32, height: 32, padding: 0,

@@ -97,6 +97,19 @@ function Typewriter({ phrases }: { phrases: string[] }) {
   );
 }
 
+/** 从消息对象中提取纯文本 */
+function extractText(msg: { role: string; content?: unknown }): string {
+  const content = (msg as Record<string, unknown>).content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((b: { type?: string }) => b && typeof b === "object" && (b as Record<string, unknown>).type === "text")
+      .map((b: { text?: string }) => (b as Record<string, unknown>).text as string ?? "")
+      .join("");
+  }
+  return "";
+}
+
 export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, searchHighlight, onOpenFile, cliTools, skills, onUploadFolder }: Props) {
   const {
     loading, error, messages, entryIds, streamState,
@@ -115,7 +128,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
     modelsRefreshKey, onBranchDataChange, onSystemPromptChange,
   });
 
-  const { soundEnabled, onSoundToggle, playDoneSound } = useAudio();
+  const { soundEnabled, onSoundToggle, playDoneSound, speakChinese, stopSpeaking } = useAudio();
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [selectedCli, setSelectedCli] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
@@ -127,34 +140,49 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   const selectedSkillRef = useRef(selectedSkill);
   selectedSkillRef.current = selectedSkill;
 
+  // Ref for latest messages so agent_end handler can access them
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   // Wrap handleSend to inject [+] menu state
   const handleSendWithContext = useCallback(
     (message: string, images?: AttachedImage[], files?: File[]) => {
+      stopSpeaking(); // 发送新消息时停止朗读
       handleSend(message, images, files, {
         webSearch: webSearchRef.current,
         cli: selectedCliRef.current,
         skill: selectedSkillRef.current,
       });
     },
-    [handleSend]
+    [handleSend, stopSpeaking]
   );
   const playDoneSoundRef = useRef(playDoneSound);
   playDoneSoundRef.current = playDoneSound;
   const soundEnabledRef = useRef(soundEnabled);
   soundEnabledRef.current = soundEnabled;
+  const speakChineseRef = useRef(speakChinese);
+  speakChineseRef.current = speakChinese;
 
-  // Wrap agent event handler to play sound on agent_end
+  // Wrap agent event handler to speak on agent_end
   const origHandler = handleAgentEventRef.current;
   useEffect(() => {
     handleAgentEventRef.current = (event) => {
       if (event.type === "agent_end" && soundEnabledRef.current) {
-        playDoneSoundRef.current();
+        // 取最后一条 assistant 消息，用中文朗读
+        const msgs = messagesRef.current;
+        const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant");
+        if (lastAssistant) {
+          speakChineseRef.current(extractText(lastAssistant));
+        }
       }
       origHandler?.(event);
     };
   }, [origHandler, handleAgentEventRef]);
 
-  // Push session stats up to AppShell for the top bar.
+  const wrappedHandleAbort = useCallback(() => {
+    stopSpeaking(); // 中止时停止朗读
+    handleAbort();
+  }, [handleAbort, stopSpeaking]);
   // Compare scalar fields to avoid loops from new object identity each render.
   const statsKey = sessionStats
     ? `${sessionStats.tokens.input}|${sessionStats.tokens.output}|${sessionStats.tokens.cacheRead}|${sessionStats.tokens.cacheWrite}|${sessionStats.cost ?? 0}`
@@ -200,7 +228,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
     <ChatInput
       ref={chatInputRef}
       onSend={handleSendWithContext}
-      onAbort={handleAbort}
+      onAbort={wrappedHandleAbort}
       onSteer={agentRunning ? handleSteer : undefined}
       onFollowUp={agentRunning ? handleFollowUp : undefined}
       isStreaming={agentRunning}

@@ -373,7 +373,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
 
     const userMsg = {
       role: "user" as const,
-      content: contentBlocks.length > 1 ? contentBlocks : (contentBlocks[0] ?? message),
+      content: contentBlocks.length > 1
+        ? contentBlocks
+        : contentBlocks.length === 1 && contentBlocks[0].type === "text"
+          ? (contentBlocks[0] as { type: "text"; text: string }).text
+          : message,
       timestamp: Date.now(),
     } as unknown as AgentMessage;
     setMessages((prev) => [...prev, userMsg]);
