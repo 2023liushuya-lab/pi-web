@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import type { SessionInfo } from "@/lib/types";
 import { FileExplorer } from "./FileExplorer";
+import { ResourcePanel } from "./ResourcePanel";
 
 interface Props {
   selectedSessionId: string | null;
@@ -213,6 +214,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
   const customPathInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [explorerOpen, setExplorerOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<"sessions" | "resources">("sessions");
   const [explorerKey, setExplorerKey] = useState(0);
   const [sessionRefreshDone, setSessionRefreshDone] = useState(false);
   const [explorerRefreshDone, setExplorerRefreshDone] = useState(false);
@@ -685,38 +687,82 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
         </div>
       </div>
 
-      {/* Session list */}
-      <div style={{ flex: explorerOpen && (selectedCwdProp || selectedCwd) ? "1 1 0" : "1 1 auto", overflowY: "auto", padding: "0", minHeight: 80 }}>
-        {loading && (
-          <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>
-            {t("loading")}
-          </div>
-        )}
-        {error && (
-          <div style={{ padding: "12px 14px", color: "#f87171", fontSize: 12 }}>
-            {error}
-          </div>
-        )}
-        {!loading && !error && filteredSessions.length === 0 && (
-          <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>
-            {t("noSessions")}
-          </div>
-        )}
-        {sessionTree.map((node) => (
-          <SessionTreeItem
-            key={node.session.id}
-            node={node}
-            selectedSessionId={selectedSessionId}
-            onSelectSession={onSelectSession}
-            onRenamed={loadSessions}
-            onSessionDeleted={(id) => {
-              onSessionDeleted?.(id);
-              loadSessions();
-            }}
-            depth={0}
-          />
-        ))}
-      </div>
+      {/* Tab bar: Sessions | Resources */}
+      {(selectedCwdProp || selectedCwd) && (
+        <div style={{
+          display: "flex", gap: 0,
+          borderBottom: "1px solid var(--border)",
+          padding: "0 8px", flexShrink: 0,
+        }}>
+          {(["sessions", "resources"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSidebarTab(tab)}
+              style={{
+                padding: "8px 14px",
+                border: "none", background: "none",
+                fontSize: 12,
+                color: sidebarTab === tab ? "var(--text)" : "var(--text-muted)",
+                cursor: "pointer",
+                borderBottom: sidebarTab === tab ? "2px solid var(--accent)" : "2px solid transparent",
+                fontWeight: sidebarTab === tab ? 600 : 400,
+                transition: "all 0.12s",
+              }}
+            >
+              {tab === "sessions" ? "Sessions" : "📦 资源库"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Session list / Resource panel */}
+      {sidebarTab === "sessions" ? (
+        <div style={{ flex: explorerOpen && (selectedCwdProp || selectedCwd) ? "1 1 0" : "1 1 auto", overflowY: "auto", padding: "0", minHeight: 80 }}>
+          {loading && (
+            <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>
+              {t("loading")}
+            </div>
+          )}
+          {error && (
+            <div style={{ padding: "12px 14px", color: "#f87171", fontSize: 12 }}>
+              {error}
+            </div>
+          )}
+          {!loading && !error && filteredSessions.length === 0 && (
+            <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>
+              {t("noSessions")}
+            </div>
+          )}
+          {sessionTree.map((node) => (
+            <SessionTreeItem
+              key={node.session.id}
+              node={node}
+              selectedSessionId={selectedSessionId}
+              onSelectSession={onSelectSession}
+              onRenamed={loadSessions}
+              onSessionDeleted={(id) => {
+                onSessionDeleted?.(id);
+                loadSessions();
+              }}
+              depth={0}
+            />
+          ))}
+        </div>
+      ) : (
+        <div style={{ flex: "1 1 0", overflowY: "auto", minHeight: 0 }}>
+          {(selectedCwdProp || selectedCwd) && (
+            <ResourcePanel
+              cwd={selectedCwdProp ?? selectedCwd!}
+              onOpenFile={onOpenFile ?? (() => {})}
+              onSelectSession={(id) => {
+                const session = allSessions.find((s) => s.id === id);
+                if (session) onSelectSession(session);
+              }}
+              refreshKey={refreshKey}
+            />
+          )}
+        </div>
+      )}
 
       {/* File Explorer section */}
       {(selectedCwdProp || selectedCwd) && (

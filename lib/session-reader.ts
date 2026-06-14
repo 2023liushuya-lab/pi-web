@@ -1,5 +1,5 @@
 import { SessionManager, buildSessionContext as piBuildSessionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
-import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage } from "./types";
+import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage, TextContent, ToolCallContent, SessionMessageEntry } from "./types";
 import type { SessionEntry as PiSessionEntry, SessionInfo as PiSessionInfo } from "@earendil-works/pi-coding-agent";
 import { normalizeToolCalls } from "./normalize";
 
@@ -186,6 +186,163 @@ export function buildSessionContext(entries: SessionEntry[], leafId?: string | n
 export function getLeafId(entries: SessionEntry[]): string | null {
   if (entries.length === 0) return null;
   return entries[entries.length - 1].id;
+}
+
+export interface SearchMatch {
+  entryId: string;
+  snippet: string;
+  type: "title" | "content";
+}
+
+export interface SearchResult {
+  sessionId: string;
+  sessionPath: string;
+  title: string;
+  matchCount: number;
+  matches: SearchMatch[];
+}
+
+export async function searchSessions(query: string, cwd?: string): Promise<SearchResult[]> {
+  const allSessions = await listAllSessions();
+  const targetSessions = cwd ? allSessions.filter((s) => s.cwd === cwd) : allSessions;
+  const results: SearchResult[] = [];
+  const q = query.toLowerCase();
+
+  for (const session of targetSessions) {
+    let entries: SessionEntry[];
+    try {
+      entries = SessionManager.open(session.path).getEntries() as unknown as SessionEntry[];
+    } catch {
+      continue;
+    }
+
+    const messages = entries.filter((e) => e.type === "message") as SessionMessageEntry[];
+
+    let title = "";
+    let titleEntryId = "";
+    for (const msg of messages) {
+      if (msg.message?.role === "user") {
+        const content = typeof msg.message.content === "string" ? msg.message.content : (msg.message.content as TextContent[])?.[0]?.text ?? "";
+        title = content.slice(0, 80);
+        titleEntryId = msg.id;
+        break;
+      }
+    }
+
+    const matches: SearchMatch[] = [];
+
+    if (title.toLowerCase().includes(q)) {
+      const idx = title.toLowerCase().indexOf(q);
+      const start = Math.max(0, idx - 20);
+      const end = Math.min(title.length, idx + q.length + 20);
+      let snippet = title.slice(start, end);
+      if (start > 0) snippet = "..." + snippet;
+      if (end < title.length) snippet += "...";
+      matches.push({ entryId: titleEntryId, snippet, type: "title" });
+    }
+
+    for (const msg of messages) {
+      const content = typeof msg.message?.content === "string"
+        ? msg.message.content
+        : Array.isArray(msg.message?.content)
+          ? msg.message.content
+              .filter((b) => (b as TextContent).type === "text")
+              .map((b) => (b as TextContent).text)
+              .join(" ")
+          : "";
+      if (content.toLowerCase().includes(q)) {
+        const idx = content.toLowerCase().indexOf(q);
+        const start = Math.max(0, idx - 50);
+        const end = Math.min(content.length, idx + q.length + 50);
+        let snippet = content.slice(start, end);
+        if (start > 0) snippet = "..." + snippet;
+        if (end < content.length) snippet += "...";
+        matches.push({ entryId: msg.id, snippet, type: "content" });
+      }
+    }
+
+    if (matches.length > 0) {
+      results.push({
+        sessionId: session.id,
+        sessionPath: session.path,
+        title: title || "(no messages)",
+        matchCount: matches.length,
+        matches: matches.slice(0, 10),
+      });
+    }
+  }
+
+  return results.sort((a, b) => b.matchCount - a.matchCount);
+}
+
+export interface ResourceFile {
+  relativePath: string;
+  fileName: string;
+  sessionId: string;
+  sessionTitle: string;
+  timestamp: string;
+}
+
+export async function getResourceFiles(cwd: string): Promise<ResourceFile[]> {
+  const allSessions = await listAllSessions();
+  const cwdSessions = allSessions.filter((s) => s.cwd === cwd);
+  const fileMap = new Map<string, ResourceFile>();
+
+  for (const session of cwdSessions) {
+    let entries: SessionEntry[];
+    try {
+      entries = SessionManager.open(session.path).getEntries() as unknown as SessionEntry[];
+    } catch {
+      continue;
+    }
+
+    let title = "";
+    for (const e of entries) {
+      if (e.type === "message" && (e as SessionMessageEntry).message?.role === "user") {
+        const content = typeof (e as SessionMessageEntry).message.content === "string"
+          ? (e as SessionMessageEntry).message.content as string
+          : "";
+        title = content.slice(0, 60);
+        break;
+      }
+    }
+
+    for (const e of entries) {
+      if (e.type !== "message") continue;
+      const msg = e as SessionMessageEntry;
+      if (msg.message?.role !== "assistant") continue;
+      const content = msg.message.content;
+      if (!Array.isArray(content)) continue;
+      for (const block of content) {
+        if ((block as ToolCallContent).type !== "toolCall") continue;
+        const tc = block as ToolCallContent;
+        if (!/^write/i.test(tc.toolName)) continue;
+        const filePath =
+          (tc.input?.path as string | undefined) ??
+          (tc.input?.target as string | undefined) ??
+          (tc.input?.filePath as string | undefined);
+        if (!filePath || typeof filePath !== "string") continue;
+
+        let relativePath = filePath;
+        if (filePath.startsWith(cwd)) {
+          relativePath = filePath.slice(cwd.length).replace(/^\//, "");
+        }
+        const fileName = relativePath.split("/").pop() ?? relativePath;
+
+        if (!fileMap.has(relativePath) || new Date(msg.timestamp) > new Date(fileMap.get(relativePath)!.timestamp)) {
+          fileMap.set(relativePath, {
+            relativePath,
+            fileName,
+            sessionId: session.id,
+            sessionTitle: title || "(no messages)",
+            timestamp: msg.timestamp,
+          });
+        }
+      }
+    }
+  }
+
+  return Array.from(fileMap.values()).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }
 
 

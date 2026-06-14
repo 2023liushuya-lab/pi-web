@@ -9,6 +9,7 @@ import { TabBar, type Tab } from "./TabBar";
 import { ModelsConfig } from "./ModelsConfig";
 import { SkillsConfig } from "./SkillsConfig";
 import { BranchNavigator } from "./BranchNavigator";
+import { SearchModal } from "./SearchModal";
 import { useTheme } from "@/hooks/useTheme";
 import { useI18n } from "@/lib/i18n";
 import type { SessionInfo, SessionTreeNode } from "@/lib/types";
@@ -29,7 +30,20 @@ export function AppShell() {
   const [modelsRefreshKey, setModelsRefreshKey] = useState(0);
   const [skillsConfigOpen, setSkillsConfigOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
   const chatInputRef = useRef<ChatInputHandle | null>(null);
+  // Cmd+P global search shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "p") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const topBarRef = useRef<HTMLDivElement>(null);
 
   // Branch navigator state — populated by ChatWindow via onBranchDataChange
@@ -408,6 +422,27 @@ export function AppShell() {
           >
             {locale === "en" ? "中" : "EN"}
           </button>
+          {/* Search button */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            title="搜索对话 (⌘P)"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              height: "100%", padding: "0 14px",
+              background: "none", border: "none", borderRight: "1px solid var(--border)",
+              color: "var(--text-dim)", cursor: "pointer", flexShrink: 0,
+              fontSize: 11, transition: "color 0.12s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dim)"; }}
+          >
+            🔍 {t("search") || "搜索"}
+            <span style={{
+              padding: "1px 5px", borderRadius: 3,
+              background: "var(--bg-hover)", border: "1px solid var(--border)",
+              fontFamily: "var(--font-mono)", fontSize: 10,
+            }}>⌘P</span>
+          </button>
           {showChat && (
             <div style={{ display: "flex", alignItems: "stretch", height: "100%" }}>
               <button
@@ -724,6 +759,16 @@ export function AppShell() {
     {skillsConfigOpen && (activeCwd ?? selectedSession?.cwd ?? newSessionCwd) && (
       <SkillsConfig cwd={(activeCwd ?? selectedSession?.cwd ?? newSessionCwd)!} onClose={() => setSkillsConfigOpen(false)} />
     )}
+    <SearchModal
+      open={searchOpen}
+      onClose={() => setSearchOpen(false)}
+      cwd={selectedSession?.cwd ?? newSessionCwd ?? activeCwd}
+      onSelectSession={(sessionId) => {
+        setRefreshKey((k) => k + 1);
+        setSearchOpen(false);
+        router.replace(`?session=${encodeURIComponent(sessionId)}`, { scroll: false });
+      }}
+    />
     </>
   );
 }
