@@ -4,6 +4,8 @@
 
 ### 🐛 水合错误：i18n SSR/CSR 语言不一致
 
+**状态**：✅ 已修复 | **Issue**：[#2](https://github.com/2023liushuya-lab/pi-web/issues/2)
+
 **症状**：页面加载时 React 水合报错 `Hydration failed because the server rendered text didn't match the client`，按钮 title 属性服务端渲染英文、客户端显示中文。
 
 **根因**：`I18nProvider.getInitialLocale()` 在服务端（`window` 不存在）固定返回 `"en"`，但客户端从 `localStorage` 读取用户偏好可能是 `"zh"` → 服务端和客户端渲染内容不一致。
@@ -21,6 +23,8 @@
 
 ### 🐛 发送消息报错：`message.content.filter is not a function`
 
+**状态**：✅ 已修复 | **Issue**：[#3](https://github.com/2023liushuya-lab/pi-web/issues/3)
+
 **症状**：在 Web UI 中每次发送消息时浏览器控制台报错 `TypeError: message.content.filter is not a function`。
 
 **根因**：`hooks/useAgentSession.ts` 的 `handleSend` 中，当只有 1 个纯文本内容块时，`contentBlocks[0]` 是对象 `{type:"text", text:"..."}`，而 `UserMessageView` 期望 `content` 是 `string | Array`，收到对象后调用 `.filter()` 就报错了。
@@ -33,6 +37,8 @@
 ---
 
 ### 🐛 Turbopack 符号链接编译错误
+
+**状态**：✅ 已修复 | **Issue**：[#4](https://github.com/2023liushuya-lab/pi-web/issues/4)
 
 **症状**：清除 `.next` 缓存后重启 `next dev`，Turbopack panic 报错：`FileSystemPath("").join("../knowledge") leaves the filesystem root`。
 
