@@ -331,18 +331,51 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   }, [loadSession, onAgentEnd]);
   handleAgentEventRef.current = handleAgentEvent;
 
-  const handleSend = useCallback(async (message: string, images?: AttachedImage[], _files?: File[]) => {
-    if (!message.trim() && !images?.length) return;
+  const handleSend = useCallback(async (message: string, images?: AttachedImage[], files?: File[]) => {
+    const hasContent = message.trim() || images?.length || files?.length;
+    if (!hasContent) return;
     if (agentRunning) return;
 
+    // Read non-image files as base64
+    const fileBlocks: { type: "file"; fileName: string; mimeType: string; data: string }[] = [];
+    if (files?.length) {
+      const readFile = (file: File): Promise<{ type: "file"; fileName: string; mimeType: string; data: string }> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(",")[1];
+            resolve({ type: "file", fileName: file.name, mimeType: file.type || "application/octet-stream", data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      try {
+        const results = await Promise.all(files.map(readFile));
+        fileBlocks.push(...results);
+      } catch {
+        // ignore read errors
+      }
+    }
+
     const imageBlocks = images?.map((img) => ({ type: "image" as const, source: { type: "base64" as const, media_type: img.mimeType, data: img.data } }));
-    const userMsg: AgentMessage = {
-      role: "user",
-      content: imageBlocks?.length
-        ? [...(message.trim() ? [{ type: "text" as const, text: message }] : []), ...imageBlocks]
-        : message,
+    const contentBlocks: Record<string, unknown>[] = [];
+    if (message.trim()) contentBlocks.push({ type: "text" as const, text: message });
+    if (imageBlocks?.length) contentBlocks.push(...imageBlocks);
+    for (const fb of fileBlocks) {
+      contentBlocks.push({
+        type: "file" as const,
+        fileName: fb.fileName,
+        mimeType: fb.mimeType,
+        data: fb.data,
+      });
+    }
+
+    const userMsg = {
+      role: "user" as const,
+      content: contentBlocks.length > 1 ? contentBlocks : (contentBlocks[0] ?? message),
       timestamp: Date.now(),
-    };
+    } as unknown as AgentMessage;
     setMessages((prev) => [...prev, userMsg]);
     setAgentRunning(true);
     setAgentPhase({ kind: "waiting_model" });
@@ -350,6 +383,19 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     pendingScrollToUserRef.current = true;
 
     const piImages = images?.map((img) => ({ type: "image" as const, data: img.data, mimeType: img.mimeType }));
+    const piFiles = fileBlocks.length > 0
+      ? fileBlocks.map((fb) => ({ type: "file" as const, fileName: fb.fileName, mimeType: fb.mimeType, data: fb.data }))
+      : undefined;
+
+    // Build message payload: use content blocks when there are files/images, else plain text
+    const hasAttachments = (piImages?.length ?? 0) > 0 || (piFiles?.length ?? 0) > 0;
+    const messagePayload = hasAttachments
+      ? [
+          ...(message.trim() ? [{ type: "text", text: message }] : []),
+          ...(piImages ?? []),
+          ...(piFiles ?? []),
+        ]
+      : message;
 
     try {
       if (isNew && newSessionCwd) {
@@ -363,9 +409,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           body: JSON.stringify({
             cwd: newSessionCwd,
             type: "prompt",
-            message,
+            message: messagePayload,
             toolNames,
-            ...(piImages?.length ? { images: piImages } : {}),
             ...(selectedModel ? { provider: selectedModel.provider, modelId: selectedModel.modelId } : {}),
             ...(thinkingLevel !== "auto" ? { thinkingLevel } : {}),
           }),
@@ -389,8 +434,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         connectEvents(session.id);
         await sendAgentCommand(session.id, {
           type: "prompt",
-          message,
-          ...(piImages?.length ? { images: piImages } : {}),
+          message: messagePayload,
         });
       }
     } catch (e) {

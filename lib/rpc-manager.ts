@@ -70,9 +70,35 @@ export class AgentSessionWrapper {
 
     switch (type) {
       case "prompt": {
-        // Fire and forget — events come via subscribe
-        const promptImages = command.images as Array<{ type: "image"; data: string; mimeType: string }> | undefined;
-        this.inner.prompt(command.message as string, promptImages?.length ? { images: promptImages } : undefined).catch(() => {});
+        // Extract text, images, and files from the message payload
+        const rawMessage = command.message;
+        let promptText = "";
+        let promptImages: Array<{ type: "image"; data: string; mimeType: string }> | undefined;
+        let promptFiles: Array<{ type: "file"; fileName: string; mimeType: string; data: string }> | undefined;
+
+        if (typeof rawMessage === "string") {
+          promptText = rawMessage;
+          promptImages = command.images as typeof promptImages;
+        } else if (Array.isArray(rawMessage)) {
+          const blocks = rawMessage as Array<{ type: string; text?: string; fileName?: string; mimeType?: string; data?: string }>;
+          const images: typeof promptImages = [];
+          const files: typeof promptFiles = [];
+          for (const b of blocks) {
+            if (b.type === "text" && b.text) promptText += (promptText ? "\n" : "") + b.text;
+            else if (b.type === "image" && b.data) images!.push({ type: "image", data: b.data, mimeType: b.mimeType ?? "image/png" });
+            else if (b.type === "file" && b.data && b.fileName) files!.push({ type: "file", fileName: b.fileName, mimeType: b.mimeType ?? "application/octet-stream", data: b.data });
+          }
+          if (images.length > 0) promptImages = images;
+          if (files.length > 0) promptFiles = files;
+        }
+
+        // Attach file info to prompt text so the agent knows about them
+        if (promptFiles?.length) {
+          const fileList = promptFiles.map((f) => `${f.fileName} (${f.mimeType}, ${Math.round(f.data.length * 0.75 / 1024)}KB)`).join(", ");
+          promptText = `[Attached files: ${fileList}]\n\n${promptText}`;
+        }
+
+        this.inner.prompt(promptText, promptImages?.length ? { images: promptImages } : undefined).catch(() => {});
         return null;
       }
 
