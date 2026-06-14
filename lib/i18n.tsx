@@ -10,7 +10,7 @@ const STORAGE_KEY = "pi-locale";
 const dictionaries: Record<Locale, Record<string, string>> = {
   en: {
     // AppShell
-    "app.title": "Pi Agent Web",
+    "app.title": "芫荽 Pi Web",
     "sidebar.hide": "Hide sidebar",
     "sidebar.show": "Show sidebar",
     "theme.light": "Switch to light mode",
@@ -167,7 +167,7 @@ const dictionaries: Record<Locale, Record<string, string>> = {
   },
   zh: {
     // AppShell
-    "app.title": "Pi Agent Web",
+    "app.title": "芫荽 Pi Web",
     "sidebar.hide": "隐藏侧边栏",
     "sidebar.show": "显示侧边栏",
     "theme.light": "切换到浅色模式",

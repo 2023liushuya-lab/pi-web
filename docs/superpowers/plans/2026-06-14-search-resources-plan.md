@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
 
 - [ ] **Step 2: 测试 API**
 
-Run: `curl "http://localhost:30141/api/sessions/search?q=test&cwd=/Users/liushuya"` (需要先启动 dev server)
+Run: `curl "http://localhost:32000/api/sessions/search?q=test&cwd=/Users/liushuya"` (需要先启动 dev server)
 Expected: 返回 JSON `{ results: [...] }`
 
 - [ ] **Step 3: Commit**
@@ -987,7 +987,7 @@ git commit -m "feat: integrate SearchModal with Cmd+P shortcut in AppShell"
 ```bash
 npm run dev
 ```
-打开 http://localhost:30141
+打开 http://localhost:32000
 
 - [ ] **Step 2: 测试搜索**
   - 按 `⌘P` → 弹窗出现

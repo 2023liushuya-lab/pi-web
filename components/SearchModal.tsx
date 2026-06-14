@@ -21,7 +21,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   cwd?: string | null;
-  onSelectSession: (sessionId: string) => void;
+  onSelectSession: (sessionId: string, query: string) => void;
 }
 
 export function SearchModal({ open, onClose, cwd, onSelectSession }: Props) {
@@ -80,12 +80,12 @@ export function SearchModal({ open, onClose, cwd, onSelectSession }: Props) {
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (results.length > 0 && results[selectedIdx]) {
-          onSelectSession(results[selectedIdx].sessionId);
+          onSelectSession(results[selectedIdx].sessionId, query);
           onClose();
         }
       }
     },
-    [results, selectedIdx, onClose, onSelectSession]
+    [results, selectedIdx, onClose, onSelectSession, query]
   );
 
   if (!open) return null;
@@ -149,7 +149,7 @@ export function SearchModal({ open, onClose, cwd, onSelectSession }: Props) {
           {results.map((r, i) => (
             <div
               key={r.sessionId}
-              onClick={() => { onSelectSession(r.sessionId); onClose(); }}
+              onClick={() => { onSelectSession(r.sessionId, query); onClose(); }}
               style={{
                 padding: "12px 16px", cursor: "pointer",
                 borderBottom: "1px solid var(--bg-panel)",

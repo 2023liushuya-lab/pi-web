@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import React from "react";
-
-interface ResourceFile {
-  relativePath: string;
-  fileName: string;
-  sessionId: string;
-  sessionTitle: string;
-  timestamp: string;
-}
-
-type SortMode = "time" | "type" | "session";
+import type { ResourceFile } from "@/lib/types";
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -36,7 +27,7 @@ interface Props {
 
 export function ResourcePanel({ cwd, onOpenFile, onSelectSession, refreshKey }: Props) {
   const [files, setFiles] = useState<ResourceFile[]>([]);
-  const [sort, setSort] = useState<SortMode>("time");
+  const [sort, setSort] = useState<"time" | "session">("time");
   const [loading, setLoading] = useState(true);
 
   const loadFiles = useCallback(async () => {
@@ -63,7 +54,7 @@ export function ResourcePanel({ cwd, onOpenFile, onSelectSession, refreshKey }: 
       fontSize: 10, borderBottom: "1px solid var(--border)", flexShrink: 0,
     }}>
       <div style={{ display: "flex", gap: 2, flex: 1 }}>
-        {(["time", "type", "session"] as SortMode[]).map((mode) => (
+        {(["time", "session"] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setSort(mode)}
@@ -75,45 +66,13 @@ export function ResourcePanel({ cwd, onOpenFile, onSelectSession, refreshKey }: 
               fontWeight: sort === mode ? 600 : 400,
             }}
           >
-            {{ time: "🕐 时间", type: "📁 类型", session: "💬 来源" }[mode]}
+            {{ time: "🕐 时间", session: "💬 来源" }[mode]}
           </button>
         ))}
       </div>
       <span style={{ color: "var(--text-dim)", fontSize: 10 }}>{files.length} 个文件</span>
     </div>
   );
-
-  if (sort === "type") {
-    const groups = new Map<string, ResourceFile[]>();
-    for (const f of files) {
-      const ext = f.fileName.split(".").pop()?.toLowerCase() ?? "other";
-      const category = categorizeType(ext);
-      if (!groups.has(category)) groups.set(category, []);
-      groups.get(category)!.push(f);
-    }
-
-    return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        {sortBar}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {loading && <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>加载中...</div>}
-          {!loading && files.length === 0 && (
-            <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>暂无生成的文件</div>
-          )}
-          {[...groups.entries()].map(([category, items]) => (
-            <div key={category}>
-              <div style={{ fontSize: 10, color: "var(--text-dim)", padding: "8px 12px 4px", fontWeight: 600, textTransform: "uppercase" }}>
-                {category}
-              </div>
-              {items.map((f) => (
-                <FileItem key={f.relativePath} file={f} onOpenFile={onOpenFile} onSelectSession={onSelectSession} />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -164,16 +123,4 @@ function FileItem({
       </div>
     </div>
   );
-}
-
-function categorizeType(ext: string): string {
-  const md = ["md", "markdown"];
-  const office = ["xlsx", "xls", "csv", "docx", "doc", "pptx", "ppt", "pdf"];
-  const image = ["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"];
-  const code = ["ts", "tsx", "js", "jsx", "json", "css", "html", "py", "rs", "go", "toml", "yaml", "yml"];
-  if (md.includes(ext)) return "📄 Markdown";
-  if (office.includes(ext)) return "📊 Office / 数据";
-  if (image.includes(ext)) return "🎨 图片";
-  if (code.includes(ext)) return "💻 代码";
-  return "📝 其他";
 }

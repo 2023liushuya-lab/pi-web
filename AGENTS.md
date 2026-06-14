@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-npm run dev   # port 30141
+npm run dev   # port 32000
 ```
 
 Typecheck: `node_modules/.bin/tsc --noEmit`  
@@ -55,12 +55,17 @@ lib/
   types.ts            shared TypeScript types
   normalize.ts        normalizeToolCalls() — field name mismatch between file format and our types
   system-prompt-off.ts  minimal system prompt when all tools are disabled
+  i18n.tsx            i18n provider (new)
+
+app/api/
+  resources/route.ts  file resource serving (new)
+  sessions/search/    session full-text search (new)
 
 components/
   AppShell.tsx        layout + URL state + tab management
   SessionSidebar.tsx  session tree + FileExplorer
   ChatWindow.tsx      messages + streaming + SSE + fork/navigate logic
-  ChatInput.tsx       input bar + model/thinking/tools/compact controls
+  ChatInput.tsx       input bar + model/thinking/tools/compact controls + file upload
   MessageView.tsx     renders one message (user/assistant/toolCall/toolResult)
   BranchNavigator.tsx in-session branch switcher
   ChatMinimap.tsx     scroll minimap alongside the message list
@@ -69,6 +74,9 @@ components/
   FileExplorer.tsx    file tree inside sidebar
   FileViewer.tsx      file content in a tab
   TabBar.tsx          tab bar (Chat + open file tabs)
+  FileCard.tsx        file attachment card in chat input (new)
+  ResourcePanel.tsx   resource file panel (new)
+  SearchModal.tsx     session search modal (new)
 ```
 
 ---

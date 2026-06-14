@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MarkdownBody } from "./MarkdownBody";
+import { FileCard } from "./FileCard";
 import type {
   AgentMessage,
   UserMessage,
@@ -29,6 +30,8 @@ interface Props {
   onEditContent?: (content: string) => void;
   showTimestamp?: boolean;
   prevTimestamp?: number;
+  searchHighlight?: string | null;
+  onOpenFile?: (filePath: string, fileName: string) => void;
 }
 
 function formatTime(ts?: number): string | null {
@@ -63,13 +66,12 @@ function copyText(text: string): Promise<void> {
   }
 }
 
-export function MessageView({ message, isStreaming, toolResults, modelNames, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, prevTimestamp }: Props) {
-  const t = useT();
+export function MessageView({ message, isStreaming, toolResults, modelNames, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, prevTimestamp, searchHighlight, onOpenFile }: Props) {
   if (message.role === "user") {
-    return <UserMessageView message={message as UserMessage} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} prevAssistantEntryId={prevAssistantEntryId} onEditContent={onEditContent} />;
+    return <UserMessageView message={message as UserMessage} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} prevAssistantEntryId={prevAssistantEntryId} onEditContent={onEditContent} searchHighlight={searchHighlight} />;
   }
   if (message.role === "assistant") {
-    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} toolResults={toolResults} modelNames={modelNames} showTimestamp={showTimestamp} prevTimestamp={prevTimestamp} />;
+    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} toolResults={toolResults} modelNames={modelNames} showTimestamp={showTimestamp} prevTimestamp={prevTimestamp} searchHighlight={searchHighlight} onOpenFile={onOpenFile} />;
   }
   if (message.role === "toolResult") {
     // Rendered inline under its toolCall — skip standalone rendering if paired
@@ -78,7 +80,7 @@ export function MessageView({ message, isStreaming, toolResults, modelNames, ent
   return null;
 }
 
-function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent }: {
+function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, searchHighlight }: {
   message: UserMessage;
   entryId?: string;
   onFork?: (entryId: string) => void;
@@ -86,7 +88,9 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
   onNavigate?: (entryId: string) => void;
   prevAssistantEntryId?: string;
   onEditContent?: (content: string) => void;
+  searchHighlight?: string | null;
 }) {
+  const t = useT();
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -160,7 +164,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
               })}
             </div>
           )}
-          {content && <MarkdownBody className="markdown-user-message">{content}</MarkdownBody>}
+          {content && <MarkdownBody className="markdown-user-message" searchHighlight={searchHighlight ?? undefined}>{content}</MarkdownBody>}
         </div>
 
       </div>
@@ -283,6 +287,8 @@ function AssistantMessageView({
   modelNames,
   showTimestamp,
   prevTimestamp,
+  searchHighlight,
+  onOpenFile,
 }: {
   message: AssistantMessage;
   isStreaming?: boolean;
@@ -290,7 +296,10 @@ function AssistantMessageView({
   modelNames?: Record<string, string>;
   showTimestamp?: boolean;
   prevTimestamp?: number;
+  searchHighlight?: string | null;
+  onOpenFile?: (filePath: string, fileName: string) => void;
 }) {
+  const t = useT();
   const time = showTimestamp ? formatTime(message.timestamp) : null;
   const blocks = message.content ?? [];
   const [hovered, setHovered] = useState(false);
@@ -449,7 +458,7 @@ function AssistantMessageView({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {blocks.map((block, i) => (
-          <BlockView key={i} block={block} toolResults={toolResults} isStreaming={isStreaming} streamingDuration={streamingDurations.get(i) ?? (block.type === "thinking" ? thinkingDurationFromFile : undefined)} toolCallDurations={toolCallDurations} />
+          <BlockView key={i} block={block} toolResults={toolResults} isStreaming={isStreaming} streamingDuration={streamingDurations.get(i) ?? (block.type === "thinking" ? thinkingDurationFromFile : undefined)} toolCallDurations={toolCallDurations} searchHighlight={searchHighlight} onOpenFile={onOpenFile} />
         ))}
       </div>
 
@@ -502,9 +511,9 @@ function AssistantMessageView({
   );
 }
 
-function BlockView({ block, toolResults, isStreaming, streamingDuration, toolCallDurations }: { block: AssistantContentBlock; toolResults?: Map<string, ToolResultMessage>; isStreaming?: boolean; streamingDuration?: number; toolCallDurations?: Map<string, number> }) {
+function BlockView({ block, toolResults, isStreaming, streamingDuration, toolCallDurations, searchHighlight, onOpenFile }: { block: AssistantContentBlock; toolResults?: Map<string, ToolResultMessage>; isStreaming?: boolean; streamingDuration?: number; toolCallDurations?: Map<string, number>; searchHighlight?: string | null; onOpenFile?: (filePath: string, fileName: string) => void; }) {
   if (block.type === "text") {
-    return <TextBlock block={block as TextContent} isStreaming={isStreaming} />;
+    return <TextBlock block={block as TextContent} isStreaming={isStreaming} searchHighlight={searchHighlight} />;
   }
   if (block.type === "thinking") {
     return <ThinkingBlock block={block as ThinkingContent} duration={streamingDuration} />;
@@ -513,16 +522,18 @@ function BlockView({ block, toolResults, isStreaming, streamingDuration, toolCal
     const tc = block as ToolCallContent;
     const result = toolResults?.get(tc.toolCallId);
     const duration = toolCallDurations?.get(tc.toolCallId);
-    return <ToolCallBlock block={tc} result={result} duration={duration} />;
+    return <ToolCallBlock block={tc} result={result} duration={duration} onOpenFile={onOpenFile} />;
   }
   return null;
 }
 
-function TextBlock({ block, isStreaming }: { block: TextContent; isStreaming?: boolean }) {
-  return <MarkdownBody isStreaming={isStreaming}>{block.text}</MarkdownBody>;
+function TextBlock({ block, isStreaming, searchHighlight }: { block: TextContent; isStreaming?: boolean; searchHighlight?: string | null }) {
+  // Don't highlight during streaming — text changes every frame would re-trigger the animation
+  return <MarkdownBody isStreaming={isStreaming} searchHighlight={isStreaming ? undefined : (searchHighlight ?? undefined)}>{block.text}</MarkdownBody>;
 }
 
 function ThinkingBlock({ block, duration }: { block: ThinkingContent; duration?: number }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   return (
     <div
@@ -574,7 +585,7 @@ function ThinkingBlock({ block, duration }: { block: ThinkingContent; duration?:
 }
 
 
-function ToolCallBlock({ block, result, duration }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number }) {
+function ToolCallBlock({ block, result, duration, onOpenFile }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; onOpenFile?: (filePath: string, fileName: string) => void; }) {
   const [expanded, setExpanded] = useState(false);
   const inputStr = JSON.stringify(block.input, null, 2);
 
@@ -584,6 +595,12 @@ function ToolCallBlock({ block, result, duration }: { block: ToolCallContent; re
     : null;
   const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
   const isError = result?.isError ?? false;
+
+  // Render file card for write/edit tool calls that succeeded
+  const filePath = block.input?.path as string | undefined;
+  if ((block.toolName === "write" || block.toolName === "edit") && filePath && result && !isError) {
+    return <FileCard filePath={filePath} toolName={block.toolName} onOpenFile={onOpenFile} />;
+  }
 
   return (
     <div

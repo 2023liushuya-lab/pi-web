@@ -1,0 +1,104 @@
+<h2>搜索 + 资源库 — 布局方案</h2>
+<p class="subtitle">搜索用 Cmd+P 弹窗，资源库放侧边栏</p>
+
+<div class="section">
+  <h3>方案 A：侧边栏新增"资源库"标签</h3>
+  <p class="subtitle">在现有 Sessions / Files 旁边加一个 Resources 标签</p>
+  <div class="mockup">
+    <div class="mockup-header">侧边栏结构</div>
+    <div class="mockup-body" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8;">
+      <div style="background: var(--bg); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+        🔍 <input class="mock-input" style="width: 160px; display: inline-block; margin-left: 6px;" placeholder="搜索对话... Cmd+P 弹窗">
+      </div>
+      <div style="display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+        <span style="background: var(--accent); color: white; padding: 2px 10px; border-radius: 4px;">Sessions</span>
+        <span style="padding: 2px 10px; color: var(--text-muted);">Files</span>
+        <span style="padding: 2px 10px; color: var(--text-muted);">📦 Resources</span>
+      </div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 1</div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 2</div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 3</div>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="pros"><h4>优点</h4><ul><li>复用现有标签栏模式，改动最小</li><li>用户认知负担低</li></ul></div>
+    <div class="cons"><h4>缺点</h4><ul><li>三个标签略显拥挤</li><li>资源库与 Sessions/Files 平级可能层级不清</li></ul></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>方案 B：侧边栏底部独立入口</h3>
+  <p class="subtitle">资源库作为侧边栏底部的固定图标入口</p>
+  <div class="mockup">
+    <div class="mockup-header">侧边栏结构</div>
+    <div class="mockup-body" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8;">
+      <div style="display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+        <span style="background: var(--accent); color: white; padding: 2px 10px; border-radius: 4px;">Sessions</span>
+        <span style="padding: 2px 10px; color: var(--text-muted);">Files</span>
+      </div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 1</div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 2</div>
+      <div style="color: var(--text-muted); padding: 4px 8px;">📁 Session 3</div>
+      <div style="margin-top: 20px; border-top: 1px solid var(--border); padding: 10px 8px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+        📦 <strong>资源库</strong> <span style="background: var(--accent); font-size: 10px; padding: 1px 6px; border-radius: 10px; color: white;">12 个文件</span>
+      </div>
+    </div>
+  </div>
+  <div class="pros-cons">
+    <div class="pros"><h4>优点</h4><ul><li>Sessions / Files 保持简洁</li><li>资源库有独立视觉层级</li></ul></div>
+    <div class="cons"><h4>缺点</h4><ul><li>需要打开子面板才能浏览文件</li><li>入口不够显眼，可能被忽略</li></ul></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Cmd+P 搜索弹窗（两种方案共用）</h3>
+  <p class="subtitle">快捷键唤起全局搜索，搜标题+全文</p>
+  <div class="mockup">
+    <div class="mockup-header" style="display: flex; align-items: center; gap: 8px;">
+      <span style="width: 10px; height: 10px; background: #ff5f57; border-radius: 50%;"></span>
+      <span style="width: 10px; height: 10px; background: #febc2e; border-radius: 50%;"></span>
+      <span style="width: 10px; height: 10px; background: #28c840; border-radius: 50%;"></span>
+      <span style="margin-left: 10px; color: var(--text-muted);">🔍</span>
+      <input style="background: none; border: none; color: white; font-size: 14px; outline: none; flex: 1;" value="bug fix" readonly>
+    </div>
+    <div class="mockup-body" style="font-family: var(--font-mono); font-size: 12px; max-height: 300px; overflow: hidden;">
+      <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+        <div style="color: var(--accent); font-weight: 600;">Session: API debugging with lark-cli</div>
+        <div style="color: var(--text-muted);">...遇到一个 <mark style="background: var(--accent); color: white; padding: 0 2px;">bug</mark>，排查后发现是 token 过期导致...</div>
+        <div style="color: var(--text-dim); font-size: 10px; margin-top: 2px;">6 月 14 日 · 3 条匹配</div>
+      </div>
+      <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+        <div style="color: var(--accent); font-weight: 600;">Session: pi-web 端口配置修改</div>
+        <div style="color: var(--text-muted);">...修复了 <mark style="background: var(--accent); color: white; padding: 0 2px;">bug</mark>：端口 3030 → 30141...</div>
+        <div style="color: var(--text-dim); font-size: 10px; margin-top: 2px;">6 月 14 日 · 1 条匹配</div>
+      </div>
+      <div style="padding: 10px;">
+        <div style="color: var(--accent); font-weight: 600;">Session: i18n 中英文支持</div>
+        <div style="color: var(--text-muted);">...修复了翻译中的 <mark style="background: var(--accent); color: white; padding: 0 2px;">bug</mark>...</div>
+        <div style="color: var(--text-dim); font-size: 10px; margin-top: 2px;">6 月 14 日 · 1 条匹配</div>
+      </div>
+    </div>
+    <div style="padding: 6px 10px; color: var(--text-dim); font-size: 11px; border-top: 1px solid var(--border); display: flex; justify-content: space-between;">
+      <span>↑↓ 导航</span>
+      <span>↵ 打开</span>
+      <span>Esc 关闭</span>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案 A：侧边栏标签</h3>
+      <p>资源库作为 Sessions / Files / Resources 三个并列标签</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案 B：侧边栏底部入口</h3>
+      <p>资源库作为底部固定图标，点击展开独立面板</p>
+    </div>
+  </div>
+</div>

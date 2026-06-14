@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
+console.log("\n  🌿 芫荽 pi-web — Enhanced Web UI for the Pi Coding Agent\n");
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { spawn } = require("child_process");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -36,7 +38,7 @@ const { values: cliArgs } = parseArgs({
   strict: false,
 });
 
-const port     = cliArgs.port     ?? process.env.PORT     ?? "30141";
+const port     = cliArgs.port     ?? process.env.PORT     ?? "32000";
 const hostname = cliArgs.hostname ?? process.env.HOSTNAME ?? null;
 
 if (!fs.existsSync(nextDir)) {

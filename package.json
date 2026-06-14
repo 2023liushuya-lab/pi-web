@@ -1,8 +1,13 @@
 {
-  "name": "@agegr/pi-web",
-  "version": "0.6.16",
-  "description": "Web UI for the pi coding agent",
+  "name": "pi-web",
+  "version": "0.1.0",
+  "description": "Enhanced web UI for the pi coding agent — built on the pi-web framework",
   "license": "MIT",
+  "author": "2023liushuya-lab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2023liushuya-lab/pi-web"
+  },
   "bin": {
     "pi-web": "bin/pi-web.js"
   },
@@ -17,9 +22,9 @@
     "package.json"
   ],
   "scripts": {
-    "dev": "next dev -p 30141",
+    "dev": "next dev -p 32000",
     "build": "next build --webpack",
-    "start": "next start -p 30141",
+    "start": "next start -p 32000",
     "lint": "eslint .",
     "release": "npm version patch --no-git-tag-version && npm run build && npm publish --access public"
   },
@@ -49,6 +54,6 @@
     "eslint-config-next": "16.2.1",
     "postcss": "^8",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }

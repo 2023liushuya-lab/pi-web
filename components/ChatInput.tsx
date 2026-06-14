@@ -145,12 +145,15 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     },
   }));
 
+  const onUploadFolderRef = useRef(onUploadFolder);
+  onUploadFolderRef.current = onUploadFolder;
+
   const processImageFiles = useCallback(async (files: File[]) => {
     const imageFiles = files.filter((f) => f.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
     if (imageFiles.length !== files.length) {
       // Non-image files → folder upload path
-      onUploadFolder?.(files);
+      onUploadFolderRef.current?.(files);
       if (imageFiles.length === 0) return;
     }
     const newImages = await Promise.all(
@@ -619,13 +622,13 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
               </button>
               {plusMenuOpen && (
                 <div style={{
-                  position: "absolute", bottom: "calc(100% + 6px)", right: 0,
-                  zIndex: 110,
+                  position: "absolute", bottom: "calc(100% + 6px)", left: 0,
+                  zIndex: 210,
                   background: "var(--bg)",
                   border: "1px solid var(--border)",
                   borderRadius: 8,
                   boxShadow: "0 -4px 16px rgba(0,0,0,0.12)",
-                  overflow: "hidden",
+                  overflow: "visible",
                   minWidth: 200,
                   padding: "4px 0",
                 }}>
@@ -689,8 +692,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                         </button>
                         {cliSubOpen && (
                           <div style={{
-                            position: "absolute", left: "100%", bottom: 0,
-                            marginLeft: 4,
+                            position: "absolute", left: "100%", top: 0,
+                            marginLeft: 6,
                             background: "var(--bg)",
                             border: "1px solid var(--border)",
                             borderRadius: 8,
@@ -771,8 +774,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                         </button>
                         {skillSubOpen && (
                           <div style={{
-                            position: "absolute", left: "100%", bottom: 0,
-                            marginLeft: 4,
+                            position: "absolute", left: "100%", top: 0,
+                            marginLeft: 6,
                             background: "var(--bg)",
                             border: "1px solid var(--border)",
                             borderRadius: 8,

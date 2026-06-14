@@ -1,0 +1,3 @@
+{"type":"server-started","port":49881,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:49881","screen_dir":"/Users/liushuya/pi-web/.superpowers/brainstorm/69227-1781441480/content","state_dir":"/Users/liushuya/pi-web/.superpowers/brainstorm/69227-1781441480/state"}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/69227-1781441480/content/prototype-v4-final.html"}
+{"type":"server-stopped","reason":"idle timeout"}

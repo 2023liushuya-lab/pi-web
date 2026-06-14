@@ -1,0 +1,16 @@
+{"type":"server-started","port":50883,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:50883","screen_dir":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content","state_dir":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/state"}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/search-resource-layout.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      方案 A：侧边栏标签\n      资源库作为 Sessions / Files / Resources 三个并列标签","choice":"a","id":null,"timestamp":1781439871472}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439874037}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439879553}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439880154}
+{"source":"user-event","type":"click","text":"A\n    \n      方案 A：侧边栏标签\n      资源库作为 Sessions / Files / Resources 三个并列标签","choice":"a","id":null,"timestamp":1781439892152}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439893202}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439904570}
+{"source":"user-event","type":"click","text":"B\n    \n      方案 B：侧边栏底部入口\n      资源库作为底部固定图标，点击展开独立面板","choice":"b","id":null,"timestamp":1781439904751}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/resource-panel.html"}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/prototype-v1.html"}
+{"type":"screen-updated","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/prototype-v1.html"}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/prototype-v2-planb.html"}
+{"type":"screen-added","file":"/Users/liushuya/pi-web/.superpowers/brainstorm/67199-1781439659/content/prototype-v3-layout.html"}
+{"type":"server-stopped","reason":"owner process exited"}

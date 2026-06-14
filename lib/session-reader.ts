@@ -1,5 +1,5 @@
 import { SessionManager, buildSessionContext as piBuildSessionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
-import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage, TextContent, ToolCallContent, SessionMessageEntry } from "./types";
+import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage, TextContent, ToolCallContent, SessionMessageEntry, ResourceFile } from "./types";
 import type { SessionEntry as PiSessionEntry, SessionInfo as PiSessionInfo } from "@earendil-works/pi-coding-agent";
 import { normalizeToolCalls } from "./normalize";
 
@@ -275,14 +275,6 @@ export async function searchSessions(query: string, cwd?: string): Promise<Searc
   return results.sort((a, b) => b.matchCount - a.matchCount);
 }
 
-export interface ResourceFile {
-  relativePath: string;
-  fileName: string;
-  sessionId: string;
-  sessionTitle: string;
-  timestamp: string;
-}
-
 export async function getResourceFiles(cwd: string): Promise<ResourceFile[]> {
   const allSessions = await listAllSessions();
   const cwdSessions = allSessions.filter((s) => s.cwd === cwd);
@@ -316,11 +308,16 @@ export async function getResourceFiles(cwd: string): Promise<ResourceFile[]> {
       for (const block of content) {
         if ((block as ToolCallContent).type !== "toolCall") continue;
         const tc = block as ToolCallContent;
-        if (!/^write/i.test(tc.toolName)) continue;
+        // SessionManager returns "name" in raw entries; normalizeToolCalls maps it to toolName,
+        // but we work with raw entries here so fall back to name
+        const toolName = tc.toolName || (tc as unknown as Record<string, unknown>).name as string;
+        if (!/^(write|edit)/i.test(toolName ?? "")) continue;
+        // SessionManager raw entries use "arguments" not "input"
+        const input = tc.input || (tc as unknown as Record<string, unknown>).arguments as Record<string, unknown> | undefined;
         const filePath =
-          (tc.input?.path as string | undefined) ??
-          (tc.input?.target as string | undefined) ??
-          (tc.input?.filePath as string | undefined);
+          (input?.path as string | undefined) ??
+          (input?.target as string | undefined) ??
+          (input?.filePath as string | undefined);
         if (!filePath || typeof filePath !== "string") continue;
 
         let relativePath = filePath;
@@ -328,6 +325,8 @@ export async function getResourceFiles(cwd: string): Promise<ResourceFile[]> {
           relativePath = filePath.slice(cwd.length).replace(/^\//, "");
         }
         const fileName = relativePath.split("/").pop() ?? relativePath;
+        // Only include Markdown files
+        if (!/\.md$/i.test(fileName)) continue;
 
         if (!fileMap.has(relativePath) || new Date(msg.timestamp) > new Date(fileMap.get(relativePath)!.timestamp)) {
           fileMap.set(relativePath, {

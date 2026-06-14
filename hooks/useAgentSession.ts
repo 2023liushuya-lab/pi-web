@@ -331,7 +331,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   }, [loadSession, onAgentEnd]);
   handleAgentEventRef.current = handleAgentEvent;
 
-  const handleSend = useCallback(async (message: string, images?: AttachedImage[], files?: File[]) => {
+  const handleSend = useCallback(async (message: string, images?: AttachedImage[], files?: File[], extra?: { webSearch?: boolean; cli?: string | null; skill?: string | null }) => {
     const hasContent = message.trim() || images?.length || files?.length;
     if (!hasContent) return;
     if (agentRunning) return;
@@ -413,6 +413,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
             toolNames,
             ...(selectedModel ? { provider: selectedModel.provider, modelId: selectedModel.modelId } : {}),
             ...(thinkingLevel !== "auto" ? { thinkingLevel } : {}),
+            ...(extra?.webSearch ? { webSearch: true } : {}),
+            ...(extra?.cli ? { cli: extra.cli } : {}),
+            ...(extra?.skill ? { skill: extra.skill } : {}),
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -435,6 +438,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         await sendAgentCommand(session.id, {
           type: "prompt",
           message: messagePayload,
+          ...(extra?.webSearch ? { webSearch: true } : {}),
+          ...(extra?.cli ? { cli: extra.cli } : {}),
+          ...(extra?.skill ? { skill: extra.skill } : {}),
         });
       }
     } catch (e) {

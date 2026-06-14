@@ -201,3 +201,11 @@ export interface RpcSessionState {
   sessionName?: string;
   messageCount: number;
 }
+
+export interface ResourceFile {
+  relativePath: string;
+  fileName: string;
+  sessionId: string;
+  sessionTitle: string;
+  timestamp: string;
+}

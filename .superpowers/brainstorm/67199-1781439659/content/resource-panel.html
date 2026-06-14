@@ -1,0 +1,96 @@
+<h2>资源库面板 — 展开状态</h2>
+<p class="subtitle">点击侧边栏底部 📦 资源库 后展开</p>
+
+<div class="mockup">
+  <div class="mockup-header">侧边栏（资源库展开）</div>
+  <div class="mockup-body" style="display: flex; gap: 12px; font-family: var(--font-mono); font-size: 11px; height: 400px;">
+
+    <!-- Left: Sessions tab -->
+    <div style="flex: 1; background: var(--bg); border-radius: 6px; padding: 8px; overflow: hidden;">
+      <div style="display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+        <span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Sessions</span>
+        <span style="padding: 2px 8px; color: var(--text-muted); font-size: 11px;">Files</span>
+      </div>
+      <div style="color: var(--text-muted); padding: 3px 6px;">📁 pi-web 端口修改</div>
+      <div style="color: var(--text-muted); padding: 3px 6px;">📁 i18n 中英文</div>
+      <div style="color: var(--text-muted); padding: 3px 6px;">📁 lark-cli 调试</div>
+    </div>
+
+    <!-- Right: Resources panel -->
+    <div style="flex: 1.5; background: var(--bg-panel); border-radius: 6px; border: 1px solid var(--accent); overflow: hidden;">
+      <div style="padding: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+        <strong style="font-size: 12px;">📦 资源库</strong>
+        <span style="font-size: 10px; color: var(--text-dim);">12 个文件</span>
+      </div>
+      <div style="padding: 6px 8px;">
+        <!-- Group by file type -->
+        <div style="color: var(--text-dim); font-size: 10px; margin: 4px 0 2px;">📄 Markdown</div>
+        <div style="padding: 3px 6px; color: var(--text-muted); cursor: pointer; border-radius: 3px;">
+          <div>AGENTS.md</div>
+          <div style="font-size: 10px; color: var(--text-dim);">来自: lark-cli 调试</div>
+        </div>
+        <div style="padding: 3px 6px; color: var(--text-muted); cursor: pointer; border-radius: 3px;">
+          <div>README.md</div>
+          <div style="font-size: 10px; color: var(--text-dim);">来自: pi-web 端口修改</div>
+        </div>
+
+        <div style="color: var(--text-dim); font-size: 10px; margin: 8px 0 2px;">📊 Office / 数据</div>
+        <div style="padding: 3px 6px; color: var(--text-muted); cursor: pointer; border-radius: 3px;">
+          <div>report.xlsx</div>
+          <div style="font-size: 10px; color: var(--text-dim);">来自: lark-cli 调试</div>
+        </div>
+
+        <div style="color: var(--text-dim); font-size: 10px; margin: 8px 0 2px;">🎨 图片 / 其他</div>
+        <div style="padding: 3px 6px; color: var(--text-muted); cursor: pointer; border-radius: 3px;">
+          <div>logo.svg</div>
+          <div style="font-size: 10px; color: var(--text-dim);">来自: i18n 中英文</div>
+        </div>
+      </div>
+      <div style="margin-top: auto; padding: 6px 8px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text-dim); display: flex; gap: 8px;">
+        <span>🔽 按类型</span>
+        <span style="color: var(--text-muted);">🕐 按时间</span>
+        <span style="color: var(--text-muted);">📁 按来源</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>资源库交互细节</h3>
+  <div class="pros-cons">
+    <div class="pros"><h4>点击文件后</h4><ul>
+      <li>在右侧打开 FileViewer 标签页（复用现有文件查看器）</li>
+      <li>显示文件内容 + "来自 [Session 名称]" 面包屑</li>
+      <li>可点击面包屑跳转到对应对话</li>
+    </ul></div>
+    <div class="cons"><h4>分组排序方式</h4><ul>
+      <li>底部切换：按类型 / 按时间 / 按来源会话</li>
+      <li>默认按时间倒序（最新在前）</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>技术方案</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono);">
+    <tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 6px 8px; color: var(--text-dim);">API</td>
+      <td style="padding: 6px 8px;"><code>GET /api/resources?sort=time|type|session</code></td>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 6px 8px; color: var(--text-dim);">数据来源</td>
+      <td style="padding: 6px 8px;">解析 .jsonl 中的 toolCall 写文件记录 + 扫描会话 cwd 下新文件</td>
+    </tr>
+    <tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 6px 8px; color: var(--text-dim);">文件查看</td>
+      <td style="padding: 6px 8px;">复用 <code>/api/files/[...path]</code></td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 8px; color: var(--text-dim);">组件</td>
+      <td style="padding: 6px 8px;">新增 <code>ResourcePanel.tsx</code>，嵌入 SessionSidebar</td>
+    </tr>
+  </table>
+</div>
+
+<p class="subtitle">这个资源库面板的设计看起来 ok 吗？</p>

@@ -31,6 +31,7 @@ export function AppShell() {
   const [skillsConfigOpen, setSkillsConfigOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchHighlight, setSearchHighlight] = useState<string | null>(null);
   const chatInputRef = useRef<ChatInputHandle | null>(null);
   // Cmd+P global search shortcut
   useEffect(() => {
@@ -374,6 +375,19 @@ export function AppShell() {
               </svg>
             )}
           </button>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            paddingLeft: sidebarOpen ? 0 : 8,
+            marginRight: "auto",
+            color: "var(--accent)",
+            fontSize: 13, fontWeight: 700,
+            fontFamily: "var(--font-mono)",
+            transition: "opacity 0.2s",
+            opacity: sidebarOpen ? 0 : 1,
+            pointerEvents: "none",
+          }}>
+            芫荽
+          </div>
           <button
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -677,6 +691,8 @@ export function AppShell() {
               onSystemPromptChange={handleSystemPromptChange}
               onSessionStatsChange={handleSessionStatsChange}
               onContextUsageChange={handleContextUsageChange}
+              searchHighlight={searchHighlight}
+              onOpenFile={handleOpenFile}
               cliTools={["lark-cli", "gh"]}
               skills={[]}
               onUploadFolder={(files: File[]) => {
@@ -690,9 +706,15 @@ export function AppShell() {
               </div>
             ) : (
               <div style={{ position: "absolute", top: 12, left: 12, display: "flex", alignItems: "flex-start", gap: 8, userSelect: "none", pointerEvents: "none" }}>
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
-                  <line x1="20" y1="12" x2="4" y2="12" /><polyline points="10 6 4 12 10 18" />
-                </svg>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22, fontWeight: 700, color: "#fff", flexShrink: 0,
+                  boxShadow: "0 4px 16px rgba(124,58,237,0.25)",
+                }}>
+                  芫
+                </div>
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("getStarted")}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
@@ -768,7 +790,7 @@ export function AppShell() {
       open={searchOpen}
       onClose={() => setSearchOpen(false)}
       cwd={selectedSession?.cwd ?? newSessionCwd ?? activeCwd}
-      onSelectSession={(sessionId) => {
+      onSelectSession={(sessionId, query) => {
         setRefreshKey((k) => k + 1);
         setSearchOpen(false);
         // Fetch the session info then load it — router.replace alone only
@@ -779,7 +801,12 @@ export function AppShell() {
             if (!res.ok) return;
             const data = await res.json();
             if (data.info) {
+              // Set highlight before selecting so ChatWindow mounts with it.
+              // After CSS animation completes (~2s), clear the highlight to prevent
+              // re-renders from restarting the animation.
+              setSearchHighlight(query);
               handleSelectSession(data.info);
+              setTimeout(() => setSearchHighlight(null), 2500);
             }
           } catch { /* ignore */ }
         })();

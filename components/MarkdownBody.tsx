@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useT } from "@/lib/i18n";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -15,6 +16,8 @@ interface MarkdownBodyProps {
   children: string;
   className?: string;
   isStreaming?: boolean;
+  /** Search keyword to highlight with a blink animation */
+  searchHighlight?: string;
 }
 
 function copyText(text: string): Promise<void> {
@@ -36,14 +39,35 @@ function copyText(text: string): Promise<void> {
   }
 }
 
-export function MarkdownBody({ children, className, isStreaming }: MarkdownBodyProps) {
-  const normalizedMarkdown = useMemo(() => normalizeDisplayMath(children), [children]);
+export function MarkdownBody({ children, className, isStreaming, searchHighlight }: MarkdownBodyProps) {
+  const processedMarkdown = useMemo(() => {
+    const normalized = normalizeDisplayMath(children);
+    if (!searchHighlight) return normalized;
+    // Escape regex special chars; use replacer to HTML-escape matched text (prevents XSS)
+    const escaped = searchHighlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return normalized.replace(regex, (_full, match: string) => {
+      const safe = match
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      return `<span class="search-blink">${safe}</span>`;
+    });
+  }, [children, searchHighlight]);
+
+  const rehypePlugins = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plugins: any[] = [[rehypeKatex, { throwOnError: false, strict: false }]];
+    if (searchHighlight) plugins.push(rehypeRaw);
+    return plugins;
+  }, [searchHighlight]);
 
   return (
     <div className={["markdown-body", className].filter(Boolean).join(" ")}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
+        rehypePlugins={rehypePlugins}
         components={{
           code({ className, children, ...props }) {
             const lang = className?.replace("language-", "").toLowerCase() ?? "";
@@ -75,7 +99,7 @@ export function MarkdownBody({ children, className, isStreaming }: MarkdownBodyP
           },
         }}
       >
-        {normalizedMarkdown}
+        {processedMarkdown}
       </ReactMarkdown>
     </div>
   );

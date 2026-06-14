@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pi-web — 方案 B：完整侧边栏布局</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-panel: #f5f5f5;
+    --bg-hover: #eeeeee;
+    --bg-selected: #e0e0e0;
+    --border: #e0e0e0;
+    --text: #1a1a1a;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --accent: #2563eb;
+    --user-bg: #eff6ff;
+    --tool-bg: #f9fafb;
+    --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px; background: var(--bg); color: var(--text);
+    height: 100vh; overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 260px; min-width: 260px;
+    background: var(--bg-panel); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+  }
+  .sidebar-header {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim);
+  }
+  .sidebar-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 8px;
+  }
+  .sidebar-tab {
+    padding: 8px 12px; border: none; background: none;
+    font-size: 12px; color: var(--text-muted); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.12s;
+  }
+  .sidebar-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .sidebar-list {
+    flex: 1; overflow-y: auto; padding: 4px 8px; min-height: 0;
+  }
+  .sidebar-item {
+    padding: 6px 10px; border-radius: 6px;
+    cursor: pointer; color: var(--text-muted);
+    font-size: 12px; margin-bottom: 1px;
+  }
+  .sidebar-item:hover { background: var(--bg-hover); }
+  .sidebar-item.active { background: var(--bg-selected); color: var(--text); font-weight: 500; }
+  .sidebar-item .time { float: right; font-size: 10px; color: var(--text-dim); }
+
+  /* ---------- 资源库底部入口 ---------- */
+  .resource-entry {
+    flex-shrink: 0; border-top: 1px solid var(--border);
+    padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 12px; transition: all 0.12s;
+  }
+  .resource-entry:hover { background: var(--bg-hover); color: var(--text); }
+  .resource-entry.expanded { background: var(--bg-selected); color: var(--text); font-weight: 500; }
+  .resource-entry .badge {
+    margin-left: auto; background: var(--accent); color: white;
+    font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+  }
+  .resource-entry .chevron { font-size: 10px; color: var(--text-dim); transition: transform 0.2s; }
+  .resource-entry.expanded .chevron { transform: rotate(90deg); }
+
+  .resource-panel {
+    flex-shrink: 0; overflow-y: auto; max-height: 0;
+    transition: max-height 0.25s ease, border-color 0.25s ease;
+    background: var(--bg); border-top: 1px solid transparent;
+  }
+  .resource-panel.open { max-height: 300px; border-top-color: var(--border); }
+  .resource-sort {
+    display: flex; gap: 2px; padding: 6px 8px; font-size: 10px;
+  }
+  .resource-sort-btn {
+    padding: 3px 10px; border-radius: 4px; border: none; background: none;
+    cursor: pointer; color: var(--text-muted); font-size: 10px;
+  }
+  .resource-sort-btn.active { background: var(--bg-selected); color: var(--text); font-weight: 600; }
+  .resource-group-label {
+    font-size: 10px; color: var(--text-dim); padding: 6px 12px 2px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .resource-file {
+    padding: 4px 12px 4px 20px; cursor: pointer; font-size: 12px; color: var(--text-muted);
+  }
+  .resource-file:hover { background: var(--bg-hover); color: var(--text); }
+  .resource-file-name { font-family: var(--font-mono); font-size: 11px; }
+  .resource-file-src { font-size: 10px; color: var(--text-dim); }
+
+  /* Bottom buttons */
+  .sidebar-bottom {
+    flex-shrink: 0; border-top: 1px solid var(--border); padding: 8px;
+  }
+  .sidebar-bottom-btns { display: flex; gap: 4px; }
+  .sidebar-btn {
+    flex: 1; height: 32px; border: none; background: none;
+    border-radius: 9px; font-size: 11px; color: var(--text-muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .sidebar-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+  /* ---------- Center ---------- */
+  .center { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    height: 36px; background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .topbar-btn {
+    width: 36px; height: 36px; border: none; background: none;
+    border-right: 1px solid var(--border); cursor: pointer;
+    color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+  }
+  .topbar-btn:hover { color: var(--text); }
+  .topbar-search-hint {
+    margin-left: auto; margin-right: 12px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text-dim); cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .topbar-search-hint:hover { border-color: var(--accent); color: var(--text); }
+  .topbar-search-hint kbd {
+    padding: 1px 5px; border-radius: 3px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 10px;
+  }
+
+  .chat-area {
+    flex: 1; overflow-y: auto; padding: 20px 10%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .msg { }
+  .msg-role { font-size: 11px; color: var(--text-dim); font-weight: 600; margin-bottom: 3px; }
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 10px; max-width: 80%;
+    font-size: 13px; line-height: 1.6;
+  }
+  .msg-user .msg-bubble { background: var(--user-bg); margin-left: auto; }
+  .msg-assistant .msg-bubble { background: var(--bg-panel); }
+  .msg-tool {
+    background: var(--tool-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; font-family: var(--font-mono);
+    font-size: 11px; color: var(--text-muted); max-width: 80%;
+  }
+
+  /* ---------- Cmd+P Search ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.45);
+    display: none; align-items: flex-start; justify-content: center; padding-top: 15vh;
+  }
+  .overlay.show { display: flex; }
+  .search-modal {
+    width: 560px; max-width: 90vw;
+    background: var(--bg); border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden;
+  }
+  .search-input-row {
+    display: flex; align-items: center; padding: 12px 16px;
+    gap: 10px; border-bottom: 1px solid var(--border);
+  }
+  .search-input-row svg { flex-shrink: 0; color: var(--text-dim); }
+  .search-input {
+    flex: 1; border: none; background: none; outline: none;
+    font-size: 15px; color: var(--text); font-family: inherit;
+  }
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-results { max-height: 350px; overflow-y: auto; }
+  .search-result {
+    padding: 10px 16px; cursor: pointer; border-bottom: 1px solid var(--bg-panel);
+  }
+  .search-result:hover, .search-result.selected { background: var(--bg-selected); }
+  .search-result-title {
+    color: var(--accent); font-weight: 600; font-size: 13px;
+  }
+  .search-result-snippet {
+    font-size: 12px; color: var(--text-muted); margin-top: 3px;
+  }
+  .search-result-meta { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .search-result mark {
+    background: rgba(37,99,235,0.15); color: var(--accent);
+    padding: 0 2px; border-radius: 2px;
+  }
+  .search-footer {
+    padding: 8px 16px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim);
+  }
+  .search-footer kbd {
+    padding: 1px 5px; border-radius: 3px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 10px;
+  }
+
+  /* ---------- Annotation labels ---------- */
+  .annot {
+    position: absolute; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    pointer-events: none; z-index: 100; white-space: nowrap;
+  }
+  .annot-a { background: #dbeafe; color: #1d4ed8; }
+  .annot-b { background: #fef3c7; color: #b45309; }
+  .annot-c { background: #d1fae5; color: #065f46; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== 侧边栏 ===== -->
+  <div class="sidebar" style="position:relative;">
+    <div class="sidebar-header">~/pi-web</div>
+
+    <!-- 标签：Sessions + Files（FileExplorer） -->
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="switchTab(this,'sessions')">Sessions</button>
+      <button class="sidebar-tab" onclick="switchTab(this,'files')">Files</button>
+    </div>
+
+    <!-- Sessions 列表 -->
+    <div class="sidebar-list" id="panelSessions">
+      <div class="sidebar-item active">💬 lark-cli 接口调试 <span class="time">14m</span></div>
+      <div class="sidebar-item">💬 pi-web 端口修改 <span class="time">32m</span></div>
+      <div class="sidebar-item">💬 i18n 中英文支持 <span class="time">42m</span></div>
+      <div class="sidebar-item">💬 AGENTS.md 编辑 <span class="time">1h</span></div>
+      <div class="sidebar-item">💬 GitHub CLI 安装 <span class="time">1h</span></div>
+    </div>
+
+    <!-- FileExplorer（原 Files 标签） -->
+    <div class="sidebar-list" id="panelFiles" style="display:none;">
+      <div style="padding:4px 8px;font-size:11px;color:var(--text-dim);">📁 app/</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 layout.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 globals.css</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 page.tsx</div>
+      <div style="padding:4px 8px;font-size:11px;color:var(--text-dim);">📁 components/</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 AppShell.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 ChatWindow.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 ChatInput.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 SessionSidebar.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 MessageView.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 FileViewer.tsx</div>
+      <div style="padding:4px 8px;font-size:11px;color:var(--text-dim);">📁 lib/</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 i18n.tsx</div>
+      <div class="sidebar-item" style="padding-left:20px;">📄 rpc-manager.ts</div>
+    </div>
+
+    <!-- ⭐ 资源库底部入口 -->
+    <div class="resource-entry" id="resourceEntry" onclick="toggleResources()">
+      <span>📦</span>
+      <span>资源库</span>
+      <span class="badge">12</span>
+      <span class="chevron">▶</span>
+    </div>
+
+    <!-- 资源库展开面板 -->
+    <div class="resource-panel" id="resourcePanel">
+      <div class="resource-sort">
+        <button class="resource-sort-btn active" onclick="switchSort(this)">🕐 时间</button>
+        <button class="resource-sort-btn" onclick="switchSort(this)">📁 类型</button>
+        <button class="resource-sort-btn" onclick="switchSort(this)">💬 来源</button>
+      </div>
+      <div class="resource-group-label">📄 Markdown</div>
+      <div class="resource-file"><span class="resource-file-name">AGENTS.md</span><span class="resource-file-src">lark-cli 接口调试</span></div>
+      <div class="resource-file"><span class="resource-file-name">README.md</span><span class="resource-file-src">pi-web 端口修改</span></div>
+      <div class="resource-group-label">📊 Office</div>
+      <div class="resource-file"><span class="resource-file-name">report.xlsx</span><span class="resource-file-src">lark-cli 接口调试</span></div>
+      <div class="resource-group-label">🎨 图片</div>
+      <div class="resource-file"><span class="resource-file-name">logo.svg</span><span class="resource-file-src">i18n 中英文支持</span></div>
+      <div class="resource-group-label">📝 其他</div>
+      <div class="resource-file"><span class="resource-file-name">.gitignore</span><span class="resource-file-src">GitHub CLI 安装</span></div>
+    </div>
+
+    <!-- Models / Skills 按钮 -->
+    <div class="sidebar-bottom">
+      <div class="sidebar-bottom-btns">
+        <button class="sidebar-btn">🧠 Models</button>
+        <button class="sidebar-btn">📚 Skills</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 中间主区域 ===== -->
+  <div class="center">
+    <div class="topbar">
+      <button class="topbar-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+      <button class="topbar-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg>
+      </button>
+      <button class="topbar-btn" style="font-size:11px;font-weight:600;font-family:var(--font-mono);">中</button>
+      <span style="flex:1;"></span>
+      <div class="topbar-search-hint" onclick="toggleSearch()">
+        🔍 搜索对话... <kbd>⌘</kbd><kbd>P</kbd>
+      </div>
+    </div>
+    <div class="chat-area">
+      <div class="msg msg-user">
+        <div class="msg-role">You</div>
+        <div class="msg-bubble">你怎么看这个报错？</div>
+      </div>
+      <div class="msg msg-tool">🔧 read /app/layout.tsx</div>
+      <div class="msg msg-assistant">
+        <div class="msg-role">Assistant</div>
+        <div class="msg-bubble">
+          端口 3030 已被占用。AGENTS.md 已更新为 30141，并推送到了 GitHub。<br><br>
+          另外确认一下 <code>lark-cli</code> 的 token 是否过期。
+        </div>
+      </div>
+      <div class="msg msg-tool">🔧 write AGENTS.md ✓</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== Cmd+P 搜索弹窗 ===== -->
+<div class="overlay" id="searchOverlay" onclick="if(event.target===this) toggleSearch()">
+  <div class="search-modal">
+    <div class="search-input-row">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="搜索对话标题或内容..." autofocus
+        oninput="filterResults(this.value)" onkeydown="handleSearchKey(event)">
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-result selected">
+        <div class="search-result-title">💬 lark-cli 接口调试</div>
+        <div class="search-result-snippet">...token 过期的 <mark>bug</mark>，需要在飞书后台重新生成...</div>
+        <div class="search-result-meta">今天 14:22 · 3 处匹配</div>
+      </div>
+      <div class="search-result">
+        <div class="search-result-title">💬 pi-web 端口修改</div>
+        <div class="search-result-snippet">...修复了端口 3030 → 30141 <mark>bug</mark>...</div>
+        <div class="search-result-meta">今天 14:04 · 1 处匹配</div>
+      </div>
+      <div class="search-result">
+        <div class="search-result-title">💬 i18n 中英文支持</div>
+        <div class="search-result-snippet">...翻译 <mark>bug</mark>，补充 BranchNavigator i18n key...</div>
+        <div class="search-result-meta">今天 13:54 · 1 处匹配</div>
+      </div>
+    </div>
+    <div class="search-footer">
+      <span><kbd>↑↓</kbd> 导航</span>
+      <span><kbd>↵</kbd> 打开</span>
+      <span><kbd>Esc</kbd> 关闭</span>
+    </div>
+  </div>
+</div>
+
+<!-- 提示按钮 -->
+<div style="position:fixed;bottom:16px;right:16px;z-index:500;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--text-muted);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onclick="toggleSearch()">
+  🔍 <kbd style="padding:1px 5px;border-radius:3px;background:var(--bg-panel);border:1px solid var(--border);font-family:var(--font-mono);font-size:10px;">⌘P</kbd> 搜索对话
+</div>
+
+<script>
+  const overlay = document.getElementById('searchOverlay');
+  overlay.classList.add('show');
+  document.getElementById('searchInput').focus();
+
+  function toggleSearch() {
+    overlay.classList.toggle('show');
+    if (overlay.classList.contains('show')) { document.getElementById('searchInput').focus(); document.getElementById('searchInput').select(); }
+  }
+
+  function filterResults(q) {
+    document.querySelectorAll('.search-result').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'; });
+  }
+
+  let sel = 0;
+  function handleSearchKey(e) {
+    const items = [...document.querySelectorAll('.search-result')].filter(i => i.style.display !== 'none');
+    if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); items.forEach((r, i) => r.classList.toggle('selected', i === sel)); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); items.forEach((r, i) => r.classList.toggle('selected', i === sel)); }
+    if (e.key === 'Enter') { e.preventDefault(); if (items[sel]) { alert('打开: ' + items[sel].querySelector('.search-result-title').textContent); toggleSearch(); } }
+    if (e.key === 'Escape') toggleSearch();
+  }
+
+  function switchTab(btn, panel) {
+    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panelSessions').style.display = panel === 'sessions' ? '' : 'none';
+    document.getElementById('panelFiles').style.display = panel === 'files' ? '' : 'none';
+  }
+
+  document.getElementById('resourceEntry').addEventListener('click', function toggleResources() {
+    this.classList.toggle('expanded');
+    document.getElementById('resourcePanel').classList.toggle('open');
+  });
+
+  function switchSort(btn) {
+    btn.parentElement.querySelectorAll('.resource-sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); toggleSearch(); }
+  });
+</script>
+
+</body>
+</html>

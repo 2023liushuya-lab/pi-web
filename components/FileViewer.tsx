@@ -7,7 +7,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTheme } from "@/hooks/useTheme";
-import { encodeFilePathForApi, getFileName, getRelativeFilePath } from "@/lib/file-paths";
+import { encodeFilePathForApi, getFileName, getRelativeFilePath, joinFilePath, normalizeFilePathSlashes } from "@/lib/file-paths";
 
 interface Props {
   filePath: string;
@@ -677,16 +677,22 @@ function DocumentViewer({ filePath, cwd }: { filePath: string; cwd?: string }) {
 }
 
 export function FileViewer({ filePath, cwd }: Props) {
+  // Resolve relative paths against cwd so the API can find the file.
+  // ResourcePanel passes relativePath; MessageView passes absolute paths.
+  const resolvedPath = cwd && !normalizeFilePathSlashes(filePath).startsWith("/") && !/^[a-zA-Z]:/.test(normalizeFilePathSlashes(filePath))
+    ? joinFilePath(cwd, filePath)
+    : filePath;
+
   if (isImagePath(filePath)) {
-    return <ImageViewer filePath={filePath} cwd={cwd} />;
+    return <ImageViewer filePath={resolvedPath} cwd={cwd} />;
   }
   if (isAudioPath(filePath)) {
-    return <AudioViewer filePath={filePath} cwd={cwd} />;
+    return <AudioViewer filePath={resolvedPath} cwd={cwd} />;
   }
   if (isDocumentPreviewPath(filePath)) {
-    return <DocumentViewer filePath={filePath} cwd={cwd} />;
+    return <DocumentViewer filePath={resolvedPath} cwd={cwd} />;
   }
-  return <TextFileViewer filePath={filePath} cwd={cwd} />;
+  return <TextFileViewer filePath={resolvedPath} cwd={cwd} />;
 }
 
 function TextFileViewer({ filePath, cwd }: Props) {

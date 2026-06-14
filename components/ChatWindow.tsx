@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
 import { MessageView } from "./MessageView";
-import { ChatInput, type ChatInputHandle } from "./ChatInput";
+import { ChatInput, type ChatInputHandle, type AttachedImage } from "./ChatInput";
 import { ChatMinimap, useMessageRefs } from "./ChatMinimap";
 import { useAgentSession, type AgentPhase } from "@/hooks/useAgentSession";
 import { useAudio } from "@/hooks/useAudio";
@@ -21,6 +21,9 @@ interface Props {
   onSystemPromptChange?: (prompt: string | null) => void;
   onSessionStatsChange?: (stats: { tokens: { input: number; output: number; cacheRead: number; cacheWrite: number }; cost?: number } | null) => void;
   onContextUsageChange?: (usage: { percent: number | null; contextWindow: number; tokens: number | null } | null) => void;
+  /** Search keyword to highlight in messages */
+  searchHighlight?: string | null;
+  onOpenFile?: (filePath: string, fileName: string) => void;
   // [+] menu
   cliTools?: string[];
   skills?: string[];
@@ -94,7 +97,7 @@ function Typewriter({ phrases }: { phrases: string[] }) {
   );
 }
 
-export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, cliTools, skills, onUploadFolder }: Props) {
+export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, searchHighlight, onOpenFile, cliTools, skills, onUploadFolder }: Props) {
   const {
     loading, error, messages, entryIds, streamState,
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
@@ -116,6 +119,25 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [selectedCli, setSelectedCli] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  // Keep refs in sync so handleSend can read current values without re-creating itself
+  const webSearchRef = useRef(webSearchEnabled);
+  webSearchRef.current = webSearchEnabled;
+  const selectedCliRef = useRef(selectedCli);
+  selectedCliRef.current = selectedCli;
+  const selectedSkillRef = useRef(selectedSkill);
+  selectedSkillRef.current = selectedSkill;
+
+  // Wrap handleSend to inject [+] menu state
+  const handleSendWithContext = useCallback(
+    (message: string, images?: AttachedImage[], files?: File[]) => {
+      handleSend(message, images, files, {
+        webSearch: webSearchRef.current,
+        cli: selectedCliRef.current,
+        skill: selectedSkillRef.current,
+      });
+    },
+    [handleSend]
+  );
   const playDoneSoundRef = useRef(playDoneSound);
   playDoneSoundRef.current = playDoneSound;
   const soundEnabledRef = useRef(soundEnabled);
@@ -177,7 +199,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   const chatInputElement = (
     <ChatInput
       ref={chatInputRef}
-      onSend={handleSend}
+      onSend={handleSendWithContext}
       onAbort={handleAbort}
       onSteer={agentRunning ? handleSteer : undefined}
       onFollowUp={agentRunning ? handleFollowUp : undefined}
@@ -353,6 +375,8 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
                     onEditContent={(content) => chatInputRef?.current?.insertIfEmpty(content)}
                     showTimestamp={showTimestamp}
                     prevTimestamp={idx > 0 ? (messages[idx - 1] as import("@/lib/types").AgentMessage & { timestamp?: number }).timestamp : undefined}
+                    searchHighlight={searchHighlight}
+                    onOpenFile={onOpenFile}
                   />
                 );
                 if (!isVisible) return view;
@@ -368,7 +392,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
             })()}
 
             {streamState.isStreaming && streamState.streamingMessage && (
-              <MessageView message={streamState.streamingMessage as AgentMessage} isStreaming modelNames={modelNames} />
+              <MessageView message={streamState.streamingMessage as AgentMessage} isStreaming modelNames={modelNames} searchHighlight={searchHighlight} onOpenFile={onOpenFile} />
             )}
 
             {agentRunning && !streamState.streamingMessage && (

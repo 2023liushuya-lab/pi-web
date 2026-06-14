@@ -13,13 +13,7 @@ export async function GET(request: NextRequest) {
     const files = await getResourceFiles(cwd);
 
     // Re-sort if needed (getResourceFiles already sorts by time desc)
-    if (sort === "type") {
-      files.sort((a, b) => {
-        const extA = a.fileName.split(".").pop()?.toLowerCase() ?? "";
-        const extB = b.fileName.split(".").pop()?.toLowerCase() ?? "";
-        return extA.localeCompare(extB) || b.timestamp.localeCompare(a.timestamp);
-      });
-    } else if (sort === "session") {
+    if (sort === "session") {
       files.sort((a, b) =>
         a.sessionTitle.localeCompare(b.sessionTitle) || b.timestamp.localeCompare(a.timestamp)
       );

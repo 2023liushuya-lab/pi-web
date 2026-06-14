@@ -135,7 +135,7 @@ npx tsc --noEmit
 ### 步骤 5：本地验证
 
 ```bash
-npm run dev    # 启动在 http://localhost:30141
+npm run dev    # 启动在 http://localhost:32000
 ```
 
 功能验证通过后提交。
@@ -461,7 +461,7 @@ git commit -m "fix: prevent session wrapper leak after fork"
 
 ```bash
 # 开发
-npm run dev                      # 启动 http://localhost:30141
+npm run dev                      # 启动 http://localhost:32000
 
 # 类型检查
 npx tsc --noEmit                 # 必须零错误
