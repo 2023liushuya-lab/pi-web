@@ -771,7 +771,18 @@ export function AppShell() {
       onSelectSession={(sessionId) => {
         setRefreshKey((k) => k + 1);
         setSearchOpen(false);
-        router.replace(`?session=${encodeURIComponent(sessionId)}`, { scroll: false });
+        // Fetch the session info then load it — router.replace alone only
+        // updates the URL; handleSelectSession actually mounts the chat.
+        (async () => {
+          try {
+            const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.info) {
+              handleSelectSession(data.info);
+            }
+          } catch { /* ignore */ }
+        })();
       }}
     />
     </>
