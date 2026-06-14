@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Noto_Sans_Mono } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import "katex/dist/katex.min.css";
@@ -16,13 +17,17 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get("pi-locale");
+  const serverLocale = (localeCookie?.value === "zh" ? "zh" : "en") as "en" | "zh";
+
   return (
-    <html lang="en" className={notoSansMono.variable} suppressHydrationWarning>
+    <html lang={serverLocale} className={notoSansMono.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -31,7 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider initialLocale={serverLocale}>{children}</I18nProvider>
       </body>
     </html>
   );

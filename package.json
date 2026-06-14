@@ -22,7 +22,7 @@
     "package.json"
   ],
   "scripts": {
-    "dev": "next dev -p 32000",
+    "dev": "next dev -p 32000 --webpack",
     "build": "next build --webpack",
     "start": "next start -p 32000",
     "lint": "eslint .",

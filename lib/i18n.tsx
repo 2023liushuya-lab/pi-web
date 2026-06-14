@@ -345,12 +345,22 @@ function getInitialLocale(): Locale {
   return "en";
 }
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+export function I18nProvider({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(
+    () => initialLocale ?? getInitialLocale()
+  );
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
     try { localStorage.setItem(STORAGE_KEY, l); } catch {}
+    // Sync cookie for SSR hydration
+    try { document.cookie = `${STORAGE_KEY}=${l};path=/;max-age=${60 * 60 * 24 * 365}`; } catch {}
   }, []);
 
   // Sync <html lang> attribute
