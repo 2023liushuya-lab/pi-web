@@ -94,15 +94,6 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const [cliSubOpen, setCliSubOpen] = useState(false);
   const [skillSubOpen, setSkillSubOpen] = useState(false);
 
-  // Set webkitdirectory on folder input when it enters the DOM (via [+] menu)
-  useEffect(() => {
-    const el = folderInputRef.current;
-    if (el && plusMenuOpen) {
-      el.setAttribute("webkitdirectory", "");
-      el.setAttribute("directory", "");
-    }
-  }, [plusMenuOpen]);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const modelDropdownPanelRef = useRef<HTMLDivElement>(null);
@@ -846,9 +837,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                       <div style={{ height: 1, background: "var(--border)", margin: "2px 8px" }} />
                       <button
                         onClick={() => {
-                          requestAnimationFrame(() => {
-                            folderInputRef.current?.click();
-                          });
+                          folderInputRef.current?.click();
                         }}
                         style={{
                           display: "flex", alignItems: "center", gap: 8,
@@ -860,7 +849,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                         onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-muted)"; }}
                       >
-                        📁 {t("uploadFolder") || "上传文件夹"}
+                        📁 {t("uploadFile") || "上传文件"}
                       </button>
                       <input
                         ref={folderInputRef}

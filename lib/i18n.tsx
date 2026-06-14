@@ -152,7 +152,7 @@ const dictionaries: Record<Locale, Record<string, string>> = {
     "installing": "Installing…",
     "search": "Search",
     "webSearch": "Web Search",
-    "uploadFolder": "Upload Folder",
+    "uploadFile": "Upload File",
     "searchSkills": "Search skills…",
     "noResults": "No results",
 
@@ -309,7 +309,7 @@ const dictionaries: Record<Locale, Record<string, string>> = {
     "installing": "安装中…",
     "search": "搜索",
     "webSearch": "联网搜索",
-    "uploadFolder": "上传文件夹",
+    "uploadFile": "上传文件",
     "searchSkills": "搜索技能…",
     "noResults": "无结果",
 
