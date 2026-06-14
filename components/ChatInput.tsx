@@ -93,14 +93,14 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const [cliSubOpen, setCliSubOpen] = useState(false);
   const [skillSubOpen, setSkillSubOpen] = useState(false);
 
-  // Set webkitdirectory on folder input (non-standard, must be done via DOM)
+  // Set webkitdirectory on folder input when it enters the DOM (via [+] menu)
   useEffect(() => {
     const el = folderInputRef.current;
-    if (el) {
+    if (el && plusMenuOpen) {
       el.setAttribute("webkitdirectory", "");
       el.setAttribute("directory", "");
     }
-  }, []);
+  }, [plusMenuOpen]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
