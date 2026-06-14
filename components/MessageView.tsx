@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n";
+
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MarkdownBody } from "./MarkdownBody";
 import type {
@@ -62,6 +64,7 @@ function copyText(text: string): Promise<void> {
 }
 
 export function MessageView({ message, isStreaming, toolResults, modelNames, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, prevTimestamp }: Props) {
+  const t = useT();
   if (message.role === "user") {
     return <UserMessageView message={message as UserMessage} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} prevAssistantEntryId={prevAssistantEntryId} onEditContent={onEditContent} />;
   }
@@ -176,7 +179,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
           }}>
             <button
               onClick={copyContent}
-              title="Copy message"
+              title={t("copy")}
               style={{
                 display: "flex", alignItems: "center", gap: 4,
                 padding: "3px 8px", height: 22,
@@ -240,7 +243,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
                 <button
                   onClick={() => { onFork!(entryId!); }}
                   disabled={forking}
-                  title={forking ? "Creating new session…" : "New session — creates an independent copy from here"}
+                  title={forking ? t("fork.creating") : t("fork.title")}
                   style={{
                     display: "flex", alignItems: "center", gap: 4,
                     padding: "3px 8px", height: 22,
@@ -261,7 +264,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
                     <circle cx="6" cy="18" r="3" />
                     <path d="M18 9a9 9 0 0 1-9 9" />
                   </svg>
-                  {forking ? "Creating…" : "New session"}
+                  {forking ? t("fork.creatingShort") : t("fork.newSession")}
                 </button>
               )}
             </div>
@@ -461,7 +464,7 @@ function AssistantMessageView({
         {textContent && !isStreaming && (
           <button
             onClick={copyContent}
-            title="Copy message"
+            title={t("copy")}
             style={{
               display: "flex", alignItems: "center", gap: 4,
               padding: "3px 8px", height: 22,
@@ -546,7 +549,7 @@ function ThinkingBlock({ block, duration }: { block: ThinkingContent; duration?:
           textAlign: "left",
         }}
       >
-        <span>Thinking</span>
+        <span>{t("thinking")}</span>
         {duration !== undefined && (
           <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>{duration}s</span>
         )}

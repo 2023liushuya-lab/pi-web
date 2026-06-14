@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useT } from "@/lib/i18n";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -110,6 +111,7 @@ function normalizeDisplayMath(markdown: string): string {
 }
 
 function MermaidBlock({ code, isStreaming }: { code: string; isStreaming?: boolean }) {
+  const t = useT();
   const { isDark } = useTheme();
   const [showPreview, setShowPreview] = useState(false);
   const [svg, setSvg] = useState<string | null>(null);
@@ -180,7 +182,7 @@ function MermaidBlock({ code, isStreaming }: { code: string; isStreaming?: boole
 
   const body =
     failedKey === currentKey ? (
-      <div className="mermaid-block mermaid-block-error">Invalid Mermaid diagram</div>
+      <div className="mermaid-block mermaid-block-error">{t("Invalid Mermaid diagram", "Invalid Mermaid diagram")}</div>
     ) : !svg || renderedKey !== currentKey ? (
       <div className="mermaid-block mermaid-block-loading" aria-label="Rendering Mermaid diagram" />
     ) : (

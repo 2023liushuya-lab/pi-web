@@ -10,6 +10,7 @@ import { ModelsConfig } from "./ModelsConfig";
 import { SkillsConfig } from "./SkillsConfig";
 import { BranchNavigator } from "./BranchNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import { useI18n } from "@/lib/i18n";
 import type { SessionInfo, SessionTreeNode } from "@/lib/types";
 import type { ChatInputHandle } from "./ChatInput";
 
@@ -17,6 +18,7 @@ export function AppShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isDark, toggleTheme } = useTheme();
+  const { locale, setLocale, t } = useI18n();
   const [selectedSession, setSelectedSession] = useState<SessionInfo | null>(null);
   // When user clicks +, we only store the cwd — no fake session id
   const [newSessionCwd, setNewSessionCwd] = useState<string | null>(null);
@@ -250,7 +252,7 @@ export function AppShell() {
       <div style={{ padding: "8px", flexShrink: 0, display: "flex", justifyContent: "space-between", gap: 4 }}>
         {([
           {
-            label: "Models",
+            label: t("models"),
             onClick: () => setModelsConfigOpen(true),
             disabled: false,
             icon: (
@@ -264,7 +266,7 @@ export function AppShell() {
             ),
           },
           {
-            label: "Skills",
+            label: t("skills"),
             onClick: () => setSkillsConfigOpen(true),
             disabled: !activeCwd && !selectedSession?.cwd && !newSessionCwd,
             icon: (
@@ -338,7 +340,7 @@ export function AppShell() {
         <div ref={topBarRef} style={{ display: "flex", alignItems: "center", flexShrink: 0, borderBottom: "1px solid var(--border)", height: 36, background: "var(--bg-panel)" }}>
           <button
             onClick={() => setSidebarOpen((v) => !v)}
-            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            title={sidebarOpen ? t("sidebar.hide") : t("sidebar.show")}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 36, height: 36, padding: 0,
@@ -363,8 +365,8 @@ export function AppShell() {
               const rect = e.currentTarget.getBoundingClientRect();
               toggleTheme({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
             }}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? t("theme.light") : t("theme.dark")}
+            aria-label={isDark ? t("theme.light") : t("theme.dark")}
             aria-pressed={isDark}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -389,13 +391,30 @@ export function AppShell() {
               </svg>
             )}
           </button>
+          {/* Language toggle */}
+          <button
+            onClick={() => setLocale(locale === "en" ? "zh" : "en")}
+            title={locale === "en" ? t("locale.switchToZh") : t("locale.switchToEn")}
+            aria-label={locale === "en" ? t("locale.switchToZh") : t("locale.switchToEn")}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 36, height: 36, padding: 0,
+              background: "none", border: "none", borderRight: "1px solid var(--border)",
+              color: "var(--text-muted)", cursor: "pointer", flexShrink: 0, transition: "color 0.12s",
+              fontSize: 11, fontWeight: 600, fontFamily: "var(--font-mono)",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+          >
+            {locale === "en" ? "中" : "EN"}
+          </button>
           {showChat && (
             <div style={{ display: "flex", alignItems: "stretch", height: "100%" }}>
               <button
                 onClick={handleExportSession}
                 disabled={!selectedSession}
-                title={selectedSession ? "Export HTML" : "Export is available after the session is saved"}
-                aria-label="Export HTML"
+                title={selectedSession ? t("export.html") : t("export.disabled")}
+                aria-label={t("export.html")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -441,7 +460,7 @@ export function AppShell() {
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                 </span>
-                <span>Export</span>
+                <span>{t("export")}</span>
               </button>
               <BranchNavigator
                 tree={branchTree}
@@ -476,7 +495,7 @@ export function AppShell() {
                   <line x1="8" y1="13" x2="16" y2="13" />
                   <line x1="8" y1="17" x2="13" y2="17" />
                 </svg>
-                <span>System</span>
+                <span>{t("system")}</span>
               </button>
             </div>
           )}
@@ -593,11 +612,11 @@ export function AppShell() {
                     </div>
                   ) : systemPrompt === "" ? (
                     <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
-                      System prompt is empty (tools are disabled)
+                      {t("system.empty")}
                     </div>
                   ) : (
                     <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
-                      Send a message to load the system prompt
+                      {t("system.loading")}
                     </div>
                   )}
                 </div>
@@ -627,7 +646,7 @@ export function AppShell() {
           ) : showPlaceholder ? (
             activeCwd ? (
               <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 15 }}>
-                Select a session from the sidebar
+                {t("selectSession")}
               </div>
             ) : (
               <div style={{ position: "absolute", top: 12, left: 12, display: "flex", alignItems: "flex-start", gap: 8, userSelect: "none", pointerEvents: "none" }}>
@@ -635,10 +654,10 @@ export function AppShell() {
                   <line x1="20" y1="12" x2="4" y2="12" /><polyline points="10 6 4 12 10 18" />
                 </svg>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Get Started</div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("getStarted")}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
-                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>1.</span>Select a project directory from the sidebar<br />
-                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>2.</span>Add models via the <strong style={{ color: "var(--text)" }}>Models</strong> button at the bottom
+                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>1.</span>{t("getStarted.step1")}<br />
+                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>2.</span>{t("getStarted.step2")}<strong style={{ color: "var(--text)" }}>{t("models")}</strong>{t("getStarted.step2.button")}
                   </div>
                 </div>
               </div>
@@ -676,7 +695,7 @@ export function AppShell() {
             <FileViewer filePath={activeFileTab.filePath} cwd={activeCwd ?? undefined} />
           ) : (
             <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-dim)", fontSize: 12 }}>
-              No file open
+              {t("noFileOpen")}
             </div>
           )}
         </div>
@@ -685,7 +704,7 @@ export function AppShell() {
     {/* File panel toggle — always visible at top-right */}
     <button
       onClick={() => setRightPanelOpen((v) => !v)}
-      title={rightPanelOpen ? "Hide file panel" : "Show file panel"}
+      title={rightPanelOpen ? t("panel.file.hide") : t("panel.file.show")}
       style={{
         position: "fixed", top: 0, right: 0, zIndex: 300,
         display: "flex", alignItems: "center", justifyContent: "center",

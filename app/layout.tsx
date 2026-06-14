@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Mono } from "next/font/google";
+import { I18nProvider } from "@/lib/i18n";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
@@ -29,7 +30,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
-        {children}
+        <I18nProvider>{children}</I18nProvider>
       </body>
     </html>
   );

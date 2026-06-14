@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useT } from "@/lib/i18n";
 import type { SessionEntry, SessionTreeNode } from "@/lib/types";
 
 interface Props {
@@ -212,6 +213,7 @@ function TreeNodeView({ node, activePathIds, depth, isLast, parentLines, onSelec
 }
 
 export function BranchNavigator({ tree, activeLeafId, onLeafChange, inline, containerRef, open: openProp, onToggle, hasSession }: Props) {
+  const t = useT();
   const [openInternal, setOpenInternal] = useState(false);
   const open = openProp !== undefined ? openProp : openInternal;
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -293,7 +295,7 @@ export function BranchNavigator({ tree, activeLeafId, onLeafChange, inline, cont
           onMouseLeave={(e) => { e.currentTarget.style.color = open ? "var(--text)" : "var(--text-muted)"; }}
         >
           {branchIcon}
-          <span>Branches</span>
+          <span>{t("branches")}</span>
         </button>
         {open && dropdownPos && (
           <div style={{
@@ -350,7 +352,7 @@ export function BranchNavigator({ tree, activeLeafId, onLeafChange, inline, cont
         }}
       >
         {branchIcon}
-        <span style={{ color: "var(--text-muted)" }}>Branches</span>
+        <span style={{ color: "var(--text-muted)" }}>{t("branches")}</span>
         {chevron}
       </button>
 
