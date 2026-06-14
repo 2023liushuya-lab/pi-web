@@ -93,6 +93,15 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const [cliSubOpen, setCliSubOpen] = useState(false);
   const [skillSubOpen, setSkillSubOpen] = useState(false);
 
+  // Set webkitdirectory on folder input (non-standard, must be done via DOM)
+  useEffect(() => {
+    const el = folderInputRef.current;
+    if (el) {
+      el.setAttribute("webkitdirectory", "");
+      el.setAttribute("directory", "");
+    }
+  }, []);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const modelDropdownPanelRef = useRef<HTMLDivElement>(null);
@@ -809,8 +818,6 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                       <input
                         ref={folderInputRef}
                         type="file"
-                        // @ts-expect-error webkitdirectory is not in React types
-                        webkitdirectory=""
                         multiple
                         style={{ display: "none" }}
                         onChange={(e) => {
