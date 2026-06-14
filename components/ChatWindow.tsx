@@ -21,6 +21,10 @@ interface Props {
   onSystemPromptChange?: (prompt: string | null) => void;
   onSessionStatsChange?: (stats: { tokens: { input: number; output: number; cacheRead: number; cacheWrite: number }; cost?: number } | null) => void;
   onContextUsageChange?: (usage: { percent: number | null; contextWindow: number; tokens: number | null } | null) => void;
+  // [+] menu
+  cliTools?: string[];
+  skills?: string[];
+  onUploadFolder?: (files: File[]) => void;
 }
 
 function phaseLabel(phase: AgentPhase): string {
@@ -90,7 +94,7 @@ function Typewriter({ phrases }: { phrases: string[] }) {
   );
 }
 
-export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange }: Props) {
+export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, cliTools, skills, onUploadFolder }: Props) {
   const {
     loading, error, messages, entryIds, streamState,
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
@@ -109,6 +113,9 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   });
 
   const { soundEnabled, onSoundToggle, playDoneSound } = useAudio();
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [selectedCli, setSelectedCli] = useState<string | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const playDoneSoundRef = useRef(playDoneSound);
   playDoneSoundRef.current = playDoneSound;
   const soundEnabledRef = useRef(soundEnabled);
@@ -192,6 +199,15 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
       retryInfo={retryInfo}
       soundEnabled={soundEnabled}
       onSoundToggle={onSoundToggle}
+      webSearchEnabled={webSearchEnabled}
+      onWebSearchToggle={() => setWebSearchEnabled((v) => !v)}
+      cliTools={cliTools}
+      selectedCli={selectedCli}
+      onCliChange={setSelectedCli}
+      skills={skills}
+      selectedSkill={selectedSkill}
+      onSkillChange={setSelectedSkill}
+      onUploadFolder={onUploadFolder}
     />
   );
 

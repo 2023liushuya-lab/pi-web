@@ -38,6 +38,16 @@ interface Props {
   retryInfo?: { attempt: number; maxAttempts: number; errorMessage?: string } | null;
   soundEnabled?: boolean;
   onSoundToggle?: () => void;
+  // [+] menu
+  webSearchEnabled?: boolean;
+  onWebSearchToggle?: () => void;
+  cliTools?: string[];
+  selectedCli?: string | null;
+  onCliChange?: (cli: string | null) => void;
+  skills?: string[];
+  selectedSkill?: string | null;
+  onSkillChange?: (skill: string | null) => void;
+  onUploadFolder?: (files: File[]) => void;
 }
 
 export interface ChatInputHandle {
@@ -67,6 +77,10 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   thinkingLevel, onThinkingLevelChange, availableThinkingLevels, thinkingLevelMap,
   retryInfo,
   soundEnabled, onSoundToggle,
+  webSearchEnabled, onWebSearchToggle,
+  cliTools, selectedCli, onCliChange,
+  skills, selectedSkill, onSkillChange,
+  onUploadFolder,
 }: Props, ref) {
   const t = useT();
   const [value, setValue] = useState("");
@@ -75,6 +89,9 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const [toolDropdownOpen, setToolDropdownOpen] = useState(false);
   const [thinkingDropdownOpen, setThinkingDropdownOpen] = useState(false);
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [cliSubOpen, setCliSubOpen] = useState(false);
+  const [skillSubOpen, setSkillSubOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -82,6 +99,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const toolDropdownRef = useRef<HTMLDivElement>(null);
   const thinkingDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
   const lastCompositionEndAtRef = useRef(0);
 
@@ -127,7 +146,12 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
 
   const processImageFiles = useCallback(async (files: File[]) => {
     const imageFiles = files.filter((f) => f.type.startsWith("image/"));
-    if (!imageFiles.length) return;
+    if (imageFiles.length === 0) return;
+    if (imageFiles.length !== files.length) {
+      // Non-image files → folder upload path
+      onUploadFolder?.(files);
+      if (imageFiles.length === 0) return;
+    }
     const newImages = await Promise.all(
       imageFiles.map(
         (file) =>
@@ -271,6 +295,11 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       }
       if (thinkingDropdownRef.current && !thinkingDropdownRef.current.contains(e.target as Node)) {
         setThinkingDropdownOpen(false);
+      }
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
+        setPlusMenuOpen(false);
+        setCliSubOpen(false);
+        setSkillSubOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -515,6 +544,289 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 <polyline points="21 15 16 10 5 21" />
               </svg>
             </button>
+            {/* ── [+] Plus menu ── */}
+            <div ref={plusMenuRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setPlusMenuOpen((v) => !v)}
+                disabled={isStreaming}
+                title="更多选项"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32,
+                  background: plusMenuOpen ? "var(--bg-hover)" : "none",
+                  border: "none",
+                  borderRadius: 9,
+                  color: plusMenuOpen ? "var(--text)" : "var(--text-muted)",
+                  cursor: isStreaming ? "not-allowed" : "pointer",
+                  fontSize: 16, fontWeight: 700,
+                  opacity: isStreaming ? 0.5 : 1,
+                  transition: "background 0.12s, color 0.12s",
+                }}
+                onMouseEnter={(e) => {
+                  if (isStreaming) return;
+                  e.currentTarget.style.background = "var(--bg-hover)";
+                  e.currentTarget.style.color = "var(--text)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = plusMenuOpen ? "var(--bg-hover)" : "none";
+                  e.currentTarget.style.color = plusMenuOpen ? "var(--text)" : "var(--text-muted)";
+                }}
+              >
+                +
+              </button>
+              {plusMenuOpen && (
+                <div style={{
+                  position: "absolute", bottom: "calc(100% + 6px)", right: 0,
+                  zIndex: 110,
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  boxShadow: "0 -4px 16px rgba(0,0,0,0.12)",
+                  overflow: "hidden",
+                  minWidth: 200,
+                  padding: "4px 0",
+                }}>
+                  {/* Web search toggle */}
+                  {onWebSearchToggle && (
+                    <button
+                      onClick={() => { onWebSearchToggle(); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        width: "100%", padding: "7px 12px",
+                        background: "none", border: "none",
+                        color: "var(--text-muted)", cursor: "pointer",
+                        fontSize: 12, textAlign: "left",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                    >
+                      <span style={{ flex: 1 }}>🌐 {t("webSearch") || "联网搜索"}</span>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center",
+                        width: 32, height: 18, padding: 0,
+                        borderRadius: 9,
+                        background: webSearchEnabled ? "var(--accent)" : "var(--bg-hover)",
+                        border: webSearchEnabled ? "none" : "1px solid var(--border)",
+                        cursor: "pointer",
+                        position: "relative",
+                        transition: "background 0.15s",
+                      }}>
+                        <span style={{
+                          position: "absolute",
+                          width: 14, height: 14, borderRadius: "50%",
+                          background: webSearchEnabled ? "#fff" : "var(--text-dim)",
+                          left: webSearchEnabled ? 16 : 2,
+                          transition: "left 0.15s",
+                          top: 1,
+                        }} />
+                      </span>
+                    </button>
+                  )}
+
+                  {/* CLI selector */}
+                  {cliTools && cliTools.length > 0 && onCliChange && (
+                    <>
+                      <div style={{ height: 1, background: "var(--border)", margin: "2px 8px" }} />
+                      <div style={{ position: "relative" }}>
+                        <button
+                          onClick={() => setCliSubOpen((v) => !v)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            width: "100%", padding: "7px 12px",
+                            background: "none", border: "none",
+                            color: selectedCli ? "var(--accent)" : "var(--text-muted)",
+                            cursor: "pointer", fontSize: 12, textAlign: "left",
+                            fontWeight: selectedCli ? 600 : 400,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = selectedCli ? "var(--accent)" : "var(--text)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = selectedCli ? "var(--accent)" : "var(--text-muted)"; }}
+                        >
+                          <span style={{ flex: 1 }}>⌨ CLI 工具</span>
+                          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{selectedCli ?? "无"} ▾</span>
+                        </button>
+                        {cliSubOpen && (
+                          <div style={{
+                            position: "absolute", left: "100%", bottom: 0,
+                            marginLeft: 4,
+                            background: "var(--bg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 8,
+                            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                            overflow: "hidden",
+                            minWidth: 140,
+                          }}>
+                            <button
+                              onClick={() => { setCliSubOpen(false); onCliChange(null); }}
+                              style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                width: "100%", padding: "6px 12px",
+                                background: !selectedCli ? "var(--bg-selected)" : "none",
+                                border: "none",
+                                color: !selectedCli ? "var(--text)" : "var(--text-muted)",
+                                cursor: "pointer", fontSize: 12, textAlign: "left",
+                                fontWeight: !selectedCli ? 600 : 400,
+                              }}
+                              onMouseEnter={(e) => { if (selectedCli) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                              onMouseLeave={(e) => { if (selectedCli) e.currentTarget.style.background = "none"; }}
+                            >
+                              无
+                            </button>
+                            {cliTools.map((cli) => {
+                              const isActive = selectedCli === cli;
+                              return (
+                                <button
+                                  key={cli}
+                                  onClick={() => { setCliSubOpen(false); onCliChange(cli); }}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 6,
+                                    width: "100%", padding: "6px 12px",
+                                    background: isActive ? "var(--bg-selected)" : "none",
+                                    border: "none",
+                                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                                    cursor: "pointer", fontSize: 12, textAlign: "left",
+                                    fontWeight: isActive ? 600 : 400,
+                                  }}
+                                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
+                                >
+                                  {isActive && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                      <polyline points="1.5 5 4 7.5 8.5 2.5" />
+                                    </svg>
+                                  )}
+                                  {!isActive && <span style={{ width: 10, flexShrink: 0 }} />}
+                                  {cli}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Skill selector */}
+                  {skills && skills.length > 0 && onSkillChange && (
+                    <>
+                      <div style={{ height: 1, background: "var(--border)", margin: "2px 8px" }} />
+                      <div style={{ position: "relative" }}>
+                        <button
+                          onClick={() => setSkillSubOpen((v) => !v)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            width: "100%", padding: "7px 12px",
+                            background: "none", border: "none",
+                            color: selectedSkill ? "var(--accent)" : "var(--text-muted)",
+                            cursor: "pointer", fontSize: 12, textAlign: "left",
+                            fontWeight: selectedSkill ? 600 : 400,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = selectedSkill ? "var(--accent)" : "var(--text)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = selectedSkill ? "var(--accent)" : "var(--text-muted)"; }}
+                        >
+                          <span style={{ flex: 1 }}>🧩 Skill</span>
+                          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{selectedSkill ?? "无"} ▾</span>
+                        </button>
+                        {skillSubOpen && (
+                          <div style={{
+                            position: "absolute", left: "100%", bottom: 0,
+                            marginLeft: 4,
+                            background: "var(--bg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 8,
+                            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                            overflow: "hidden",
+                            minWidth: 140,
+                            maxHeight: 200, overflowY: "auto",
+                          }}>
+                            <button
+                              onClick={() => { setSkillSubOpen(false); onSkillChange(null); }}
+                              style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                width: "100%", padding: "6px 12px",
+                                background: !selectedSkill ? "var(--bg-selected)" : "none",
+                                border: "none",
+                                color: !selectedSkill ? "var(--text)" : "var(--text-muted)",
+                                cursor: "pointer", fontSize: 12, textAlign: "left",
+                                fontWeight: !selectedSkill ? 600 : 400,
+                              }}
+                              onMouseEnter={(e) => { if (selectedSkill) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                              onMouseLeave={(e) => { if (selectedSkill) e.currentTarget.style.background = "none"; }}
+                            >
+                              无
+                            </button>
+                            {skills.map((skill) => {
+                              const isActive = selectedSkill === skill;
+                              return (
+                                <button
+                                  key={skill}
+                                  onClick={() => { setSkillSubOpen(false); onSkillChange(skill); }}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 6,
+                                    width: "100%", padding: "6px 12px",
+                                    background: isActive ? "var(--bg-selected)" : "none",
+                                    border: "none",
+                                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                                    cursor: "pointer", fontSize: 12, textAlign: "left",
+                                    fontWeight: isActive ? 600 : 400,
+                                  }}
+                                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
+                                >
+                                  {isActive && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                      <polyline points="1.5 5 4 7.5 8.5 2.5" />
+                                    </svg>
+                                  )}
+                                  {!isActive && <span style={{ width: 10, flexShrink: 0 }} />}
+                                  {skill}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Folder upload */}
+                  {onUploadFolder && (
+                    <>
+                      <div style={{ height: 1, background: "var(--border)", margin: "2px 8px" }} />
+                      <button
+                        onClick={() => folderInputRef.current?.click()}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          width: "100%", padding: "7px 12px",
+                          background: "none", border: "none",
+                          color: "var(--text-muted)", cursor: "pointer",
+                          fontSize: 12, textAlign: "left",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                      >
+                        📁 {t("uploadFolder") || "上传文件夹"}
+                      </button>
+                      <input
+                        ref={folderInputRef}
+                        type="file"
+                        // @ts-expect-error webkitdirectory is not in React types
+                        webkitdirectory=""
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            onUploadFolder(Array.from(files));
+                            setPlusMenuOpen(false);
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
             {/* Model selector — visible always, disabled during streaming */}
             {modelOptions.length > 0 && currentName && onModelChange && (
                 <div ref={dropdownRef} style={{ position: "relative" }}>

@@ -677,6 +677,11 @@ export function AppShell() {
               onSystemPromptChange={handleSystemPromptChange}
               onSessionStatsChange={handleSessionStatsChange}
               onContextUsageChange={handleContextUsageChange}
+              cliTools={["lark-cli", "gh"]}
+              skills={[]}
+              onUploadFolder={(files: File[]) => {
+                console.log("Folder uploaded:", files.length, "files");
+              }}
             />
           ) : showPlaceholder ? (
             activeCwd ? (
