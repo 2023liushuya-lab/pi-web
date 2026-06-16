@@ -62,6 +62,17 @@ export function AppShell() {
     branchLeafChangeFnRef.current?.(leafId);
   }, []);
 
+  const [totalPiCost, setTotalPiCost] = useState<number | null>(null);
+  const fetchTotalCost = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sessions/total-cost");
+      if (!res.ok) return;
+      const data = await res.json();
+      setTotalPiCost(data.totalCost ?? 0);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { fetchTotalCost(); }, [fetchTotalCost]);
+
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
   const systemBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -180,7 +191,8 @@ export function AppShell() {
   const handleAgentEnd = useCallback(() => {
     setRefreshKey((k) => k + 1);
     setExplorerRefreshKey((k) => k + 1);
-  }, []);
+    fetchTotalCost();
+  }, [fetchTotalCost]);
 
   const handleSessionForked = useCallback((newSessionId: string) => {
     setRefreshKey((k) => k + 1);
@@ -549,11 +561,11 @@ export function AppShell() {
             </div>
           )}
           {/* Session stats — right-aligned in top bar */}
-          {showChat && (sessionStats || contextUsage) && (() => {
+          {showChat && (sessionStats || contextUsage || totalPiCost !== null) && (() => {
             const t = sessionStats?.tokens;
-            const c = sessionStats?.cost ?? 0;
+            const totalCost = totalPiCost ?? 0;
             const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
-            const costStr = c > 0 ? (c >= 0.01 ? `$${c.toFixed(2)}` : `<$0.01`) : null;
+            const totalCostStr = totalCost > 0 ? (totalCost >= 0.01 ? `$${totalCost.toFixed(2)}` : `< $0.01`) : totalPiCost !== null ? `$0.00` : null;
 
             let ctxColor = "var(--text-muted)";
             let ctxStr: string | null = null;
@@ -570,7 +582,9 @@ export function AppShell() {
               tooltipParts.push(`out: ${t.output.toLocaleString()}`);
               tooltipParts.push(`cache read: ${t.cacheRead.toLocaleString()}`);
               tooltipParts.push(`cache write: ${t.cacheWrite.toLocaleString()}`);
-              if (c > 0) tooltipParts.push(`cost: $${c.toFixed(4)}`);
+            }
+            if (totalPiCost !== null && totalPiCost > 0) {
+              tooltipParts.push(`总花费: $${totalPiCost.toFixed(4)}`);
             }
             if (contextUsage?.contextWindow) {
               const pct = contextUsage.percent;
@@ -616,9 +630,12 @@ export function AppShell() {
                     {fmt(t.cacheRead)}
                   </span>
                 )}
-                {costStr && (
-                  <span style={{ display: "flex", alignItems: "center", color: "var(--text)", fontWeight: 500 }}>
-                    {costStr}
+                {totalCostStr && (
+                  <span
+                    title={totalPiCost !== null && totalPiCost > 0 ? `pi 总花费: $${totalPiCost.toFixed(4)}` : undefined}
+                    style={{ display: "flex", alignItems: "center", color: "var(--accent)", fontWeight: 600 }}
+                  >
+                    {totalCostStr}
                   </span>
                 )}
                 {ctxStr && (

@@ -357,9 +357,13 @@ export class AgentSessionWrapper {
 
       case "set_tools": {
         this.inner.setActiveToolsByName(command.toolNames as string[]);
-        // Re-localize system prompt after tools change triggers a rebuild
+        // Re-localize both surface state and the canonical _baseSystemPrompt
+        // after tools change triggers a prompt rebuild.
         if (this.inner.agent.state?.systemPrompt) {
-          this.inner.agent.state.systemPrompt = localizeSystemPrompt(this.inner.agent.state.systemPrompt);
+          const localized = localizeSystemPrompt(this.inner.agent.state.systemPrompt);
+          this.inner.agent.state.systemPrompt = localized;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this.inner as any)._baseSystemPrompt = localized;
         }
         return null;
       }
@@ -472,8 +476,13 @@ export async function startRpcSession(
     if (toolNames?.length === 0) {
       inner.agent.state.systemPrompt = "";
     } else if (inner.agent.state?.systemPrompt) {
-      // Localize system prompt to Chinese where possible
-      inner.agent.state.systemPrompt = localizeSystemPrompt(inner.agent.state.systemPrompt);
+      // Localize system prompt to Chinese where possible.
+      // Must localize BOTH agent.state.systemPrompt AND the private _baseSystemPrompt —
+      // pi resets agent.state.systemPrompt from _baseSystemPrompt before every turn.
+      const localized = localizeSystemPrompt(inner.agent.state.systemPrompt);
+      inner.agent.state.systemPrompt = localized;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (inner as any)._baseSystemPrompt = localized;
     }
 
     const wrapper = new AgentSessionWrapper(inner);

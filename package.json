@@ -32,6 +32,7 @@
     "@earendil-works/pi-ai": "^0.79.0",
     "@earendil-works/pi-coding-agent": "^0.79.0",
     "@lobehub/icons": "^5.6.0",
+    "@next/swc-wasm-nodejs": "16.2.1",
     "@types/react-syntax-highlighter": "^15.5.13",
     "katex": "^0.16.47",
     "mammoth": "^1.12.0",
@@ -46,14 +47,14 @@
     "remark-math": "^6.0.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
-    "postcss": "^8",
-    "tailwindcss": "^4.2.2",
+    "postcss": "8",
+    "tailwindcss": "3",
     "typescript": "5.9.3"
   }
 }
