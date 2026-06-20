@@ -1,19 +1,20 @@
-import type { NextConfig } from "next";
+// @ts-check
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(__filename, "..");
+const __dirname = dirname(__filename);
 
-const { version } = JSON.parse(readFileSync(join(__dirname, "package.json"), "utf8")) as { version: string };
+const { version } = JSON.parse(readFileSync(join(__dirname, "package.json"), "utf8"));
 let piVersion = "unknown";
 try {
   const piPkgPath = join(__dirname, "node_modules/@earendil-works/pi-coding-agent/package.json");
-  piVersion = (JSON.parse(readFileSync(piPkgPath, "utf8")) as { version: string }).version;
+  piVersion = JSON.parse(readFileSync(piPkgPath, "utf8")).version;
 } catch { /* package not found, use default */ }
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   serverExternalPackages: ["@earendil-works/pi-coding-agent", "@earendil-works/pi-ai"],
   allowedDevOrigins: ['192.168.*.*'],
   env: {

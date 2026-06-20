@@ -18,7 +18,7 @@
     "!.next/dev",
     "!.next/**/*.js.map",
     "public",
-    "next.config.ts",
+    "next.config.mjs",
     "package.json"
   ],
   "scripts": {
