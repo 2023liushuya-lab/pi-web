@@ -6,14 +6,6 @@
 
 ## 快速开始
 
-**无需安装，直接运行：**
-
-```bash
-npx pi-web@latest
-```
-
-**或克隆项目本地运行：**
-
 ```bash
 git clone https://github.com/2023liushuya-lab/pi-web.git
 cd pi-web
@@ -23,14 +15,7 @@ npm run dev
 
 启动后打开 [http://localhost:32000](http://localhost:32000)。
 
-**可选参数：**
-
-```bash
-pi-web --port 8080
-pi-web --hostname 127.0.0.1
-pi-web -p 8080 -H 127.0.0.1
-PORT=8080 pi-web
-```
+> **注意：** `npx pi-web@latest` 指向的是上游项目 [agegr/pi-web](https://github.com/agegr/pi-web) 的发布包，与本项目不兼容。请使用 git clone 方式安装。
 
 ## 功能介绍
 
